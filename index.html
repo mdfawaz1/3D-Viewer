@@ -8,9 +8,14 @@
   <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="like_button.js"></script>
   <script src="red.js"></script>
   <script src="orange.js"></script>
+  <script src="chart.js"></script>
+  <script>        const chart = new ChartComponent();
+        chart.componentDidMount();</script>
 </head>
 <body>
   <div id="controlPanel" class="bottom-controls">
@@ -38,54 +43,28 @@
 <!-- Add this new separate control buttons container -->
 <div class="control-buttons-container">
     <div class="control-buttons">
-        <button id="resetCamera" class="icon-btn" title="Reset Camera">
+        <button id="resetCamera" class="icon-btn" title="Reset Camera Position&#10;Click to center view on model">
             <i class="fa fa-refresh"></i>
         </button>
-        <button id="toggleInspector" class="icon-btn" title="Toggle Inspector">
+        <button id="toggleInspector" class="icon-btn" title="Toggle Scene Inspector&#10;Click to show/hide debugging tools">
             <i class="fa fa-wrench"></i>
         </button>
-        <button id="switchCamera" class="icon-btn" title="Switch Camera">
+        <button id="switchCamera" class="icon-btn" title="Switch Camera Mode&#10;Click to toggle between Arc Rotate and Universal camera">
             <i class="fa fa-video-camera"></i>
         </button>
-        <button id="initiateFPP" class="icon-btn" title="First Person View">
+        <button id="initiateFPP" class="icon-btn" title="First Person Mode&#10;Click to enter first-person perspective">
             <i class="fa fa-street-view"></i>
         </button>
-        <button id="moveUp" class="icon-btn" title="Move Up">
+        <button id="moveUp" class="icon-btn" title="Move Up&#10;Click and hold to move camera upward">
             <i class="fa fa-arrow-up"></i>
         </button>
-        <button id="moveDown" class="icon-btn" title="Move Down">
+        <button id="moveDown" class="icon-btn" title="Move Down&#10;Click and hold to move camera downward">
             <i class="fa fa-arrow-down"></i>
         </button>
     </div>
 </div>
 
   <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-<!-- <nav class="menu">
-  <input type="checkbox" href="#" class="menu-open" name="menu-open" id="menu-open" />
-  <label class="menu-open-button" for="menu-open"> 
-    <span class="lines line-1"></span> 
-    <span class="lines line-2"></span> 
-    <span class="lines line-3"></span> 
-  </label>
-  <a href="#" class="menu-item item-1"> 
-    <i class="fa fa-anchor"></i> 
-  </a> 
-  <a href="#" class="menu-item item-2"> 
-    <i class="fa fa-coffee"></i> 
-  </a> 
-  <a href="#" class="menu-item item-3"> 
-    <i class="fa fa-heart"></i>
-  </a> 
-  <a href="#" class="menu-item item-4"> 
-    <i class="fa fa-microphone"></i> 
-  </a> 
-  <a href="#" class="menu-item item-5"> 
-    <i class="fa fa-star"></i> 
-  </a> 
-  <a href="#" class="menu-item item-6"> 
-    <i class="fa fa-diamond"></i> 
-  </a> 
-</nav> -->
 
   <div id="propertyPanel"></div>
   <div id="meshList">
@@ -310,8 +289,7 @@ function createRedMeshOverlay(mesh) {
           engine.getRenderWidth(),
           engine.getRenderHeight()
         )
-      );
-
+      ); 
       overlayDiv.style.left = `${screenPosition.x}px`;
       overlayDiv.style.top = `${screenPosition.y - 100}px`; // Offset above the mesh
     }
@@ -529,11 +507,25 @@ function applyCustomGlow(mesh, color) {
     
     // Change background color to a darker shade
     scene.clearColor = new BABYLON.Color3(222 / 255, 228 / 255, 231 / 255);
-// Slightly darker white  
-    // Darker white
- // Dark grey background
 
-    // Default camera as ArcRotateCamera
+    // Create and configure the environment
+    const environmentTexture = new BABYLON.CubeTexture(
+        "/example.env",  // You can replace with your own .env file path
+        scene
+    );
+    
+    // Create skybox
+    const skybox = scene.createDefaultSkybox(environmentTexture, true, 10000, 0.00);
+    
+    // Enable image processing to make the skybox look better
+    const pipeline = new BABYLON.DefaultRenderingPipeline("pipeline", true, scene);
+    if (pipeline) {
+        pipeline.imageProcessing.exposure = 0.6;
+        pipeline.imageProcessing.contrast = 1.6;
+        pipeline.toneMappingEnabled = true;
+    }
+
+    // Rest of your existing createScene code...
     const camera = new BABYLON.ArcRotateCamera("arcCam", 0, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
     camera.lowerBetaLimit = 0.1; // Prevents camera from going below the model
 camera.upperBetaLimit = Math.PI / 2; // Restricts angle to not go above top view
@@ -637,39 +629,64 @@ camera.upperRadiusLimit = 950;
     let highlightedMesh = null;
     let originalMaterial = null;
     
-    function clearHighlight() {
-        if (highlightedMesh) {
+function clearHighlight() {
+    if (highlightedMesh) {
+        // Change to red material to indicate deselection
+        if (originalMaterial) {
             highlightedMesh.material = originalMaterial;
-            highlightedMesh = null;
-            originalMaterial = null;
+        } else {
+            // If no original material, create a default material
+            const defaultMaterial = new BABYLON.StandardMaterial("defaultMat", currentScene);
+            defaultMaterial.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.9); // Light gray
+            defaultMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            defaultMaterial.emissiveColor = new BABYLON.Color3(0, 0, 0);
+            highlightedMesh.material = defaultMaterial;
         }
+        
+        // Remove chart if it exists
+        if (highlightedMesh.chartComponent) {
+            const containers = document.querySelectorAll('.chart-container');
+            containers.forEach(container => container.remove());
+            highlightedMesh.chartComponent = null;
+        }
+        
+        highlightedMesh = null;
+        originalMaterial = null;
+    }
+}
+
+    
+scene.onPointerDown = function (evt, pickResult) {
+  if (pickResult.hit) {
+    if (highlightedMesh === pickResult.pickedMesh) {
+      return;
     }
     
-    scene.onPointerDown = function (evt, pickResult) {
-        if (pickResult.hit) {
-            if (highlightedMesh === pickResult.pickedMesh) {
-                return;
-            }
-            
-            clearHighlight();
-            
-            highlightedMesh = pickResult.pickedMesh;
-            originalMaterial = highlightedMesh.material;
-            
-            // Store clone of original material to prevent shared reference issues
-            if (originalMaterial) {
-                originalMaterial = originalMaterial.clone("originalMat");
-            }
-            
-            highlightedMesh.material = new BABYLON.StandardMaterial("highlightMat", scene);
-            highlightedMesh.material.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
-            highlightedMesh.material.specularColor = new BABYLON.Color3(1, 1, 1); // White
+    clearHighlight();
+    
+    highlightedMesh = pickResult.pickedMesh;
+    originalMaterial = highlightedMesh.material;
+    
+    if (originalMaterial) {
+      originalMaterial = originalMaterial.clone("originalMat");
+    }
+    
+    highlightedMesh.material = new BABYLON.StandardMaterial("highlightMat", scene);
+    highlightedMesh.material.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
+    highlightedMesh.material.specularColor = new BABYLON.Color3(1, 1, 1);
 
-        } else {
-            clearHighlight();
-            updatePropertyPanel(null);
-        }
-    };
+  } else {
+    // Remove chart when clicking empty space
+    if (highlightedMesh && highlightedMesh.chartComponent) {
+      const containers = document.querySelectorAll('.chart-container');
+      containers.forEach(container => container.remove());
+      highlightedMesh.chartComponent = null;
+    }
+    
+    clearHighlight();
+    updatePropertyPanel(null);
+  }
+};
     
     // Add this to your mesh loading completion handler
     scene.onMeshLoaded = function(mesh) {
@@ -794,6 +811,23 @@ camera.upperRadiusLimit = 950;
                 () => {
                   const properties = getMeshProperties(mesh);
                   updatePropertyPanel(properties);
+                        // Initialize or update chart when mesh is selected
+      if (!mesh.chartComponent) {
+        mesh.chartComponent = new ChartComponent();
+        mesh.chartComponent.componentDidMount();
+      }
+      
+      // Optional: Remove chart when clicking away from mesh
+    //   currentScene.onPointerDown = function(evt, pickResult) {
+    //     if (!pickResult.hit) {
+    //       // Remove existing chart if clicking on empty space
+    //       if (mesh.chartComponent) {
+    //         const containers = document.querySelectorAll('.chart-container');
+    //         containers.forEach(container => container.remove());
+    //         mesh.chartComponent = null;
+    //       }
+    //     }
+    //   };
                 }
               )
             );

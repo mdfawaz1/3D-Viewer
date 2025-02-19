@@ -52,7 +52,7 @@ body, html {
   }
   #fpsCounter {
     position: fixed;
-    bottom: 15px;
+    top: 15px;
     right: 15px;
     background: rgba(0,0,0,0.7);
     padding: 8px 12px;
@@ -90,7 +90,7 @@ body, html {
   #meshList {
     position: fixed;
     bottom: 15px;
-    left: 15px;
+    right: 15px;
     background: rgba(50, 50, 50, 0.9);
     padding: 0px;
     border-radius: 8px;
@@ -585,4 +585,54 @@ transition: all 0.3s ease 0s;
 
 #meshList.expanded .rotate-arrow {
     transform: rotate(0deg);
+}
+.icon-btn {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Enhanced tooltip styling */
+.icon-btn:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: pre;
+  z-index: 1000;
+  min-width: 150px;
+  text-align: center;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Add arrow to tooltip */
+.icon-btn:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  margin-bottom: -12px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(10px);
+  }
+  to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+  }
 }
