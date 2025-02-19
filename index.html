@@ -385,144 +385,172 @@ function applyCustomGlow(mesh, color) {
         });
       }
       async function createScene(file = null) {
-        if (currentScene) { currentScene.dispose(); }
-        const scene = new BABYLON.Scene(engine);
-        currentScene = scene;
-        scene.clearColor = new BABYLON.Color3(0.97, 0.97, 0.95);
-        
-        // Default camera as ArcRotateCamera
-        const camera = new BABYLON.ArcRotateCamera("arcCam", 0, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
-        camera.lowerBetaLimit = 0.1; // Prevents camera from going below the model
+    if (currentScene) { currentScene.dispose(); }
+    const scene = new BABYLON.Scene(engine);
+    currentScene = scene;
+    
+    // Change background color to a darker shade
+    scene.clearColor = new BABYLON.Color3(222 / 255, 228 / 255, 231 / 255);
+// Slightly darker white  
+    // Darker white
+ // Dark grey background
+
+    // Default camera as ArcRotateCamera
+    const camera = new BABYLON.ArcRotateCamera("arcCam", 0, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
+    camera.lowerBetaLimit = 0.1; // Prevents camera from going below the model
 camera.upperBetaLimit = Math.PI / 2; // Restricts angle to not go above top view
 camera.lowerRadiusLimit = 5;
 camera.upperRadiusLimit = 950; 
-        camera.attachControl(canvas, true);
-        camera.minZ = 0.1;
-        currentCamera = camera;
-        
-        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-        light.intensity = 0.7;
-        
-        const highlightMaterial = new BABYLON.StandardMaterial("hlMat", scene);
-        highlightMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0);
-        highlightMaterial.emissiveColor = new BABYLON.Color3(0.4, 0.4, 0);
-        highlightMaterial.alpha = 0.8;
-        
-        let loadedMeshes = [];
-        
-        resetCameraBtn.onclick = () => {
-          if (loadedMeshes.length) {
-            const { center, size } = calculateModelBounds(loadedMeshes);
-            currentCamera.position = new BABYLON.Vector3(
-              center.x,
-              center.y + size.y,
-              center.z + Math.max(size.x, size.y, size.z) * 2
-            );
-            if (currentCamera instanceof BABYLON.ArcRotateCamera) {
-              currentCamera.target = center;
-            } else if (currentCamera instanceof BABYLON.UniversalCamera) {
-              currentCamera.setTarget(center);
-            }
-          } else {
-            if (currentCamera instanceof BABYLON.ArcRotateCamera) {
-              currentCamera.target = BABYLON.Vector3.Zero();
-            }
-          }
-        };
-        
-        toggleInspectorBtn.onclick = () => {
-          if (scene.debugLayer.isVisible()) {
-            scene.debugLayer.hide();
-          } else {
-            scene.debugLayer.show({ embedMode: true });
-          }
-        };
-        
-        try {
-          let result;
-          if (file) {
-            result = await BABYLON.SceneLoader.ImportMeshAsync("", "", file, scene);
-          }
-          if (result) {
-            loadedMeshes = result.meshes.filter(m => m.name !== "__root__");
-            if (loadedMeshes.length) {
-              const bounds = calculateModelBounds(loadedMeshes);
-              currentCamera.position = new BABYLON.Vector3(
-                bounds.center.x,
-                bounds.center.y + bounds.size.y,
-                bounds.center.z + Math.max(bounds.size.x, bounds.size.y, bounds.size.z) * 2
-              );
-              if (currentCamera instanceof BABYLON.ArcRotateCamera) {
-                currentCamera.target = bounds.center;
-              } else if (currentCamera instanceof BABYLON.UniversalCamera) {
-                currentCamera.setTarget(bounds.center);
-              }
-            }
-            updateMeshList(loadedMeshes);
-          }
-        } catch (error) {
-          console.error("Error loading model:", error);
-          const errDiv = document.createElement("div");
-          errDiv.style.color = "red";
-          errDiv.textContent = "Error loading model: " + error.message;
-          document.getElementById("controlPanel").appendChild(errDiv);
-        }
-        
-        let highlightedMesh = null;
-        let originalMaterial = null;
-        
-        function clearHighlight() {
-            if (highlightedMesh) {
-                highlightedMesh.material = originalMaterial;
-                highlightedMesh = null;
-                originalMaterial = null;
-            }
-        }
-        
-        scene.onPointerDown = function (evt, pickResult) {
-            if (pickResult.hit) {
-                if (highlightedMesh === pickResult.pickedMesh) {
-                    return;
-                }
-                
-                clearHighlight();
-                
-                highlightedMesh = pickResult.pickedMesh;
-                originalMaterial = highlightedMesh.material;
-                
-                // Store clone of original material to prevent shared reference issues
-                if (originalMaterial) {
-                    originalMaterial = originalMaterial.clone("originalMat");
-                }
-                
-                highlightedMesh.material = new BABYLON.StandardMaterial("highlightMat", scene);
-                highlightedMesh.material.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
-                highlightedMesh.material.specularColor = new BABYLON.Color3(1, 1, 1); // White
+    camera.attachControl(canvas, true);
+    camera.minZ = 0.1;
+    currentCamera = camera;
+    
+    // Update lighting setup
+    const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
+    hemiLight.intensity = 0.5;
+    hemiLight.groundColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+    hemiLight.specular = new BABYLON.Color3(0.5, 0.5, 0.5);
 
-            } else {
-                clearHighlight();
-                updatePropertyPanel(null);
-            }
-        };
-        
-        // Add this to your mesh loading completion handler
-        scene.onMeshLoaded = function(mesh) {
-            if (mesh.material) {
-                mesh.material = mesh.material.clone("clonedMat");
-            }
-        };
-        
-        engine.runRenderLoop(() => {
-          scene.render();
-          fpsCounter.textContent = "FPS: " + engine.getFps().toFixed(1);
-        });
-        
-        scene.onDisposeObservable.add(() => {
-          loadedMeshes = [];
-          meshListPanel.style.display = "none";
-        });
-        return scene;
+    const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -2, -1), scene);
+    dirLight.intensity = 0.15;
+    dirLight.position = new BABYLON.Vector3(20, 20, 20);
+
+    // Update default material settings
+    scene.onMeshImportedObservable.add((mesh) => {
+    if (mesh.material) {
+        mesh.material = new BABYLON.StandardMaterial("mat_" + mesh.uniqueId, scene);
+        mesh.material.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.9);
+        mesh.material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);  // Reduced from 0.5
+        mesh.material.specularPower = 64;                                  // Increased from 16
+        mesh.material.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        mesh.material.emissiveColor = new BABYLON.Color3(0.05, 0.05, 0.05);  // Reduced from 0.1
+        mesh.material.backFaceCulling = false;
+    }
+});
+
+    const light = new BABYLON.HemisphericLight("li∂ght", new BABYLON.Vector3(0, 1, 0), scene);
+    light.intensity = 0.7;
+    
+    const highlightMaterial = new BABYLON.StandardMaterial("hlMat", scene);
+    highlightMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0);
+    highlightMaterial.emissiveColor = new BABYLON.Color3(0.4, 0.4, 0);
+    highlightMaterial.alpha = 0.8;
+    
+    let loadedMeshes = [];
+    
+    resetCameraBtn.onclick = () => {
+      if (loadedMeshes.length) {
+        const { center, size } = calculateModelBounds(loadedMeshes);
+        currentCamera.position = new BABYLON.Vector3(
+          center.x,
+          center.y + size.y,
+          center.z + Math.max(size.x, size.y, size.z) * 2
+        );
+        if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+          currentCamera.target = center;
+        } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+          currentCamera.setTarget(center);
+        }
+      } else {
+        if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+          currentCamera.target = BABYLON.Vector3.Zero();
+        }
       }
+    };
+    
+    toggleInspectorBtn.onclick = () => {
+      if (scene.debugLayer.isVisible()) {
+        scene.debugLayer.hide();
+      } else {
+        scene.debugLayer.show({ embedMode: true });
+      }
+    };
+    
+    try {
+      let result;
+      if (file) {
+        result = await BABYLON.SceneLoader.ImportMeshAsync("", "", file, scene);
+      }
+      if (result) {
+        loadedMeshes = result.meshes.filter(m => m.name !== "__root__");
+        if (loadedMeshes.length) {
+          const bounds = calculateModelBounds(loadedMeshes);
+          currentCamera.position = new BABYLON.Vector3(
+            bounds.center.x,
+            bounds.center.y + bounds.size.y,
+            bounds.center.z + Math.max(bounds.size.x, bounds.size.y, bounds.size.z) * 2
+          );
+          if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+            currentCamera.target = bounds.center;
+          } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+            currentCamera.setTarget(bounds.center);
+          }
+        }
+        updateMeshList(loadedMeshes);
+      }
+    } catch (error) {
+      console.error("Error loading model:", error);
+      const errDiv = document.createElement("div");
+      errDiv.style.color = "red";
+      errDiv.textContent = "Error loading model: " + error.message;
+      document.getElementById("controlPanel").appendChild(errDiv);
+    }
+    
+    let highlightedMesh = null;
+    let originalMaterial = null;
+    
+    function clearHighlight() {
+        if (highlightedMesh) {
+            highlightedMesh.material = originalMaterial;
+            highlightedMesh = null;
+            originalMaterial = null;
+        }
+    }
+    
+    scene.onPointerDown = function (evt, pickResult) {
+        if (pickResult.hit) {
+            if (highlightedMesh === pickResult.pickedMesh) {
+                return;
+            }
+            
+            clearHighlight();
+            
+            highlightedMesh = pickResult.pickedMesh;
+            originalMaterial = highlightedMesh.material;
+            
+            // Store clone of original material to prevent shared reference issues
+            if (originalMaterial) {
+                originalMaterial = originalMaterial.clone("originalMat");
+            }
+            
+            highlightedMesh.material = new BABYLON.StandardMaterial("highlightMat", scene);
+            highlightedMesh.material.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
+            highlightedMesh.material.specularColor = new BABYLON.Color3(1, 1, 1); // White
+
+        } else {
+            clearHighlight();
+            updatePropertyPanel(null);
+        }
+    };
+    
+    // Add this to your mesh loading completion handler
+    scene.onMeshLoaded = function(mesh) {
+        if (mesh.material) {
+            mesh.material = mesh.material.clone("clonedMat");
+        }
+    };
+    
+    engine.runRenderLoop(() => {
+      scene.render();
+      fpsCounter.textContent = "FPS: " + engine.getFps().toFixed(1);
+    });
+    
+    scene.onDisposeObservable.add(() => {
+      loadedMeshes = [];
+      meshListPanel.style.display = "none";
+    });
+    return scene;
+  }
       
       // Switch camera between ArcRotateCamera and UniversalCamera
       switchCameraBtn.onclick = () => {
