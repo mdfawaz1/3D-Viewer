@@ -216,6 +216,40 @@ function createOrangeMeshOverlay(mesh) {
   return overlayDiv;
 }
 
+// Replace the applyCustomGlow function with this version that uses CSS filters
+
+function applyCustomGlow(mesh, color) {
+    // Create a new glow layer specific to this mesh
+    const glowName = "glow_" + mesh.uniqueId;
+    
+    // Remove existing glow layer if it exists
+    const existingGlow = currentScene.getGlowLayerByName(glowName);
+    if (existingGlow) {
+        existingGlow.dispose();
+    }
+    
+    const glowLayer = new BABYLON.GlowLayer(glowName, currentScene, {
+        mainTextureFixedSize: 1024,
+        blurKernelSize: 64,
+        mainTextureSamples: 4
+    });
+
+    // Convert hex color to Babylon.js Color3
+    const c = BABYLON.Color3.FromHexString(color);
+    
+    // Set the glow parameters
+    glowLayer.intensity = 0.25;
+    
+    // Add only this specific mesh
+    glowLayer.addIncludedOnlyMesh(mesh);
+    
+    // Set custom emissive color for the glow
+    glowLayer.customEmissiveColorSelector = function(meshRef, subMesh, material, result) {
+        result.set(c.r, c.g, c.b);
+        return result;
+    };
+}
+
       function getMeshProperties(mesh) {
         const pos = mesh.position;
         const rot = mesh.rotation;
@@ -601,16 +635,18 @@ camera.upperRadiusLimit = 950;
             // Check for specific mesh name and create overlay
             if (mesh.name === 'G-__559002_G-__559002_Material'  || mesh.name === 'G-__564519_G-__564519_Material' || mesh.name === 'G-__559191_G-__559191_Material') {
               createMeshOverlay(mesh);
-
+              applyCustomGlow(mesh, "#00FF00"); // Green glow
               
             }
 
             // Check for specific mesh names and create overlays
             if (mesh.name === 'G-__564663_G-__564663_Material') {
               createRedMeshOverlay(mesh);
+              applyCustomGlow(mesh, "#FF0000"); // Red glow
             }
             if (mesh.name === 'G-__562197_G-__562197_Material') {
                 createOrangeMeshOverlay(mesh);
+                applyCustomGlow(mesh, "#FFA500"); // Orange glow
             }
           });
         }
