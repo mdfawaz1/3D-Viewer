@@ -24,7 +24,7 @@ class orangeCapsuleComponent extends React.Component {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          border: '1px solid rgb(185, 95, 16)',
+          border: '1px solid rgb(231, 205, 14)',
           animation: 'fade-in 0.3s ease-in-out',
         },
       },
@@ -32,7 +32,7 @@ class orangeCapsuleComponent extends React.Component {
         style: {
           width: '12px',
           height: '12px',
-          backgroundColor: '#F97316',
+          backgroundColor: '#FEC817',
           borderRadius: '50%',
           animation: 'pulse 1.5s infinite',
         },

@@ -60,7 +60,7 @@
 </div>
 
   <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-<nav class="menu">
+<!-- <nav class="menu">
   <input type="checkbox" href="#" class="menu-open" name="menu-open" id="menu-open" />
   <label class="menu-open-button" for="menu-open"> 
     <span class="lines line-1"></span> 
@@ -85,7 +85,7 @@
   <a href="#" class="menu-item item-6"> 
     <i class="fa fa-diamond"></i> 
   </a> 
-</nav>
+</nav> -->
 
   <div id="propertyPanel"></div>
   <div id="meshList">
@@ -152,37 +152,138 @@
       }
       
       function createMeshOverlay(mesh) {
-  // Create a div element to hold the React component
-  const overlayDiv = document.createElement('div');
-  overlayDiv.className = 'capsule_component_container';
-  overlayDiv.style.position = 'absolute';
-  overlayDiv.style.zIndex = '1200';
-  document.body.appendChild(overlayDiv);
+    const overlayDiv = document.createElement('div');
+    overlayDiv.className = 'capsule_component_container';
+    overlayDiv.style.position = 'absolute';
+    overlayDiv.style.zIndex = '1200';
+    document.body.appendChild(overlayDiv);
 
-  // Create React root and render component
-  const root = ReactDOM.createRoot(overlayDiv);
-  root.render(React.createElement(CapsuleComponent, {}));
+    // Store reference to root for cleanup
+    const root = ReactDOM.createRoot(overlayDiv);
+    root.render(React.createElement(CapsuleComponent, {}));
 
-  // Update overlay position in render loop
-  currentScene.registerBeforeRender(() => {
-    if (mesh && overlayDiv) {
-      const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
-      const screenPosition = BABYLON.Vector3.Project(
-        meshPosition,
-        BABYLON.Matrix.Identity(),
-        currentScene.getTransformMatrix(),
-        currentCamera.viewport.toGlobal(
-          engine.getRenderWidth(),
-          engine.getRenderHeight()
-        )
-      );
+    // Add click handler to replace capsule with menu
+    overlayDiv.addEventListener('click', () => {
+        const menuNav = document.createElement('nav');
+        menuNav.className = 'menu';
+        menuNav.innerHTML = `
+            <input type="checkbox" href="#" class="menu-open" name="menu-open" id="menu-open-${mesh.uniqueId}" checked />
+            <label class="menu-open-button" for="menu-open-${mesh.uniqueId}"> 
+                <span class="lines line-1"></span> 
+                <span class="lines line-2"></span> 
+                <span class="lines line-3"></span> 
+            </label>
+            <a href="#" class="menu-item item-1"> 
+                <i class="fa fa-info"></i> 
+            </a> 
+            <a href="#" class="menu-item item-2"> 
+                <i class="fa fa-coffee"></i> 
+            </a> 
+            <a href="#" class="menu-item item-3"> 
+                <i class="fa fa-heart"></i>
+            </a> 
+            <a href="#" class="menu-item item-4"> 
+                <i class="fa fa-microphone"></i> 
+            </a> 
+            <a href="#" class="menu-item item-5"> 
+                <i class="fa fa-star"></i> 
+            </a> 
+            <a href="#" class="menu-item item-6"> 
+                <i class="fa fa-diamond"></i> 
+            </a>
+        `;
 
-      overlayDiv.style.left = `${screenPosition.x}px`;
-      overlayDiv.style.top = `${screenPosition.y - 70}px`; // Offset above the mesh
-    }
-  });
+        menuNav.style.position = 'absolute';
+        menuNav.style.left = overlayDiv.style.left;
+        menuNav.style.top = overlayDiv.style.top;
+        menuNav.style.zIndex = overlayDiv.style.zIndex;
 
-  return overlayDiv;
+        // Replace capsule with menu
+        document.body.removeChild(overlayDiv);
+        document.body.appendChild(menuNav);
+
+        const positionUpdateHandler = currentScene.registerBeforeRender(() => {
+            if (mesh && menuNav) {
+                const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+                const screenPosition = BABYLON.Vector3.Project(
+                    meshPosition,
+                    BABYLON.Matrix.Identity(),
+                    currentScene.getTransformMatrix(),
+                    currentCamera.viewport.toGlobal(
+                        engine.getRenderWidth(),
+                        engine.getRenderHeight()
+                    )
+                );
+
+                menuNav.style.left = `${screenPosition.x -770}px`;
+                menuNav.style.top = `${screenPosition.y - 50}px`;
+            }
+        });
+
+        // Function to restore capsule
+        const restoreCapsule = () => {
+            document.body.removeChild(menuNav);
+            currentScene.unregisterBeforeRender(positionUpdateHandler);
+            
+            // Recreate capsule
+            const newOverlay = createMeshOverlay(mesh);
+            
+            // Position it immediately
+            const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+            const screenPosition = BABYLON.Vector3.Project(
+                meshPosition,
+                BABYLON.Matrix.Identity(),
+                currentScene.getTransformMatrix(),
+                currentCamera.viewport.toGlobal(
+                    engine.getRenderWidth(),
+                    engine.getRenderHeight()
+                )
+            );
+
+            newOverlay.style.left = `${screenPosition.x}px`;
+            newOverlay.style.top = `${screenPosition.y - 70}px`;
+        };
+
+        // Add click handler for menu-open-button
+        const menuOpenButton = menuNav.querySelector('.menu-open-button');
+        menuOpenButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            restoreCapsule();
+        });
+
+        // Add click handlers for menu items
+        menuNav.querySelectorAll('.menu-item').forEach((item, index) => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (index === 0) { // Info icon clicked
+                    restoreCapsule();
+                } else {
+                    console.log('Menu item clicked:', e.target.className);
+                }
+            });
+        });
+    });
+
+    // Update overlay position in render loop
+    currentScene.registerBeforeRender(() => {
+        if (mesh && overlayDiv) {
+            const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+            const screenPosition = BABYLON.Vector3.Project(
+                meshPosition,
+                BABYLON.Matrix.Identity(),
+                currentScene.getTransformMatrix(),
+                currentCamera.viewport.toGlobal(
+                    engine.getRenderWidth(),
+                    engine.getRenderHeight()
+                )
+            );
+
+            overlayDiv.style.left = `${screenPosition.x}px`;
+            overlayDiv.style.top = `${screenPosition.y - 70}px`;
+        }
+    });
+
+    return overlayDiv;
 }
 
 function createRedMeshOverlay(mesh) {
@@ -266,7 +367,7 @@ function applyCustomGlow(mesh, color) {
     
     const glowLayer = new BABYLON.GlowLayer(glowName, currentScene, {
         mainTextureFixedSize: 1024,
-        blurKernelSize: 64,
+        blurKernelSize: 32,
         mainTextureSamples: 4
     });
 
@@ -274,7 +375,7 @@ function applyCustomGlow(mesh, color) {
     const c = BABYLON.Color3.FromHexString(color);
     
     // Set the glow parameters
-    glowLayer.intensity = 0.25;
+    glowLayer.intensity = 0.45;
     
     // Add only this specific mesh
     glowLayer.addIncludedOnlyMesh(mesh);
