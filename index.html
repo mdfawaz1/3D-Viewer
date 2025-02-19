@@ -13,26 +13,52 @@
   <script src="orange.js"></script>
 </head>
 <body>
-  <div id="controlPanel">
-    <input type="file" id="fileInput" accept=".glb,.obj,.gltf" /><br/>
-    <div class="btn-group">
-      <button id="resetCamera" class="btn">Reset Camera</button>
-      <button id="toggleInspector" class="btn">Toggle Inspector</button>
+  <div id="controlPanel" class="bottom-controls">
+    <div class="file-dropdown">
+        <div class="upload-btn-container">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                <i class="fa fa-cloud-upload"></i>
+                <span>Upload Model</span>
+            </button>
+            <input type="file" id="fileInput" accept=".glb,.obj,.gltf" hidden />
+        </div>
+        <div class="dropdown-content">
+            <!-- <input type="file" id="fileInput" accept=".glb,.obj,.gltf" hidden />
+            <label for="fileInput" class="file-option"> -->
+                <i class="fa fa-cube"></i>  GLB/GLTF/OBJ Model
+
+            <!-- <input type="file" id="objFileInput" accept=".obj" hidden />
+            <label for="objFileInput" class="file-option">
+                <i class="fa fa-object-group"></i> OBJ Model -->
+
+        </div>
     </div>
-    <div class="btn-group">
-      <button id="switchCamera" class="btn">Switch Camera</button>
-      <button id="initiateFPP" class="btn">Initiate FPP</button>
+</div>
+
+<!-- Add this new separate control buttons container -->
+<div class="control-buttons-container">
+    <div class="control-buttons">
+        <button id="resetCamera" class="icon-btn" title="Reset Camera">
+            <i class="fa fa-refresh"></i>
+        </button>
+        <button id="toggleInspector" class="icon-btn" title="Toggle Inspector">
+            <i class="fa fa-wrench"></i>
+        </button>
+        <button id="switchCamera" class="icon-btn" title="Switch Camera">
+            <i class="fa fa-video-camera"></i>
+        </button>
+        <button id="initiateFPP" class="icon-btn" title="First Person View">
+            <i class="fa fa-street-view"></i>
+        </button>
+        <button id="moveUp" class="icon-btn" title="Move Up">
+            <i class="fa fa-arrow-up"></i>
+        </button>
+        <button id="moveDown" class="icon-btn" title="Move Down">
+            <i class="fa fa-arrow-down"></i>
+        </button>
     </div>
-    <div class="btn-group">
-      <button id="moveUp" class="btn">Move Up</button>
-      <button id="moveDown" class="btn">Move Down</button>
-    </div>
-    <div style="margin-top:10px; font-size:12px;">
-      <strong>Camera Controls:</strong><br/>
-      <em>ArcRotate:</em> Rotate (left drag), Zoom (wheel/pinch), Pan (right drag/Shift+left drag), Keyboard (arrow keys/WASD)<br/>
-      <em>Universal:</em> Move (WASD/arrow), Look (mouse), Jump (space)
-    </div>
-  </div>
+</div>
+
   <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 <nav class="menu">
   <input type="checkbox" href="#" class="menu-open" name="menu-open" id="menu-open" />
@@ -675,6 +701,24 @@ camera.upperRadiusLimit = 950;
             if (mesh.name === 'G-__562197_G-__562197_Material') {
                 createOrangeMeshOverlay(mesh);
                 applyCustomGlow(mesh, "#FFA500"); // Orange glow
+            }
+
+            // Add specific coloring for the new mesh
+            if (mesh.name === 'G-__566166_G-__566166_Material.002') {
+                // Create new green material
+                const greenMaterial = new BABYLON.StandardMaterial("greenMat", currentScene);
+                greenMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0);     // Pure green
+                greenMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+                greenMaterial.emissiveColor = new BABYLON.Color3(0, 0.2, 0);  // Slight green glow
+                greenMaterial.ambientColor = new BABYLON.Color3(0, 0.5, 0);   // Green ambient
+                greenMaterial.specularPower = 64;
+                greenMaterial.backFaceCulling = false;
+                
+                // Apply material to mesh
+                mesh.material = greenMaterial;
+                
+                // Optionally add glow effect
+                // applyCustomGlow(mesh, "#00FF00");
             }
           });
         }
