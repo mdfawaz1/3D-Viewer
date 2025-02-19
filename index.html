@@ -6,7 +6,9 @@
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
   <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
-</head>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="like_button.js"></script>
 <body>
   <div id="controlPanel">
     <input type="file" id="fileInput" accept=".glb,.obj,.gltf" /><br/>
@@ -110,6 +112,40 @@
         };
       }
       
+      function createMeshOverlay(mesh) {
+  // Create a div element to hold the React component
+  const overlayDiv = document.createElement('div');
+  overlayDiv.className = 'capsule_component_container';
+  overlayDiv.style.position = 'absolute';
+  overlayDiv.style.zIndex = '1200';
+  document.body.appendChild(overlayDiv);
+
+  // Create React root and render component
+  const root = ReactDOM.createRoot(overlayDiv);
+  root.render(React.createElement(CapsuleComponent, {}));
+
+  // Update overlay position in render loop
+  currentScene.registerBeforeRender(() => {
+    if (mesh && overlayDiv) {
+      const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+      const screenPosition = BABYLON.Vector3.Project(
+        meshPosition,
+        BABYLON.Matrix.Identity(),
+        currentScene.getTransformMatrix(),
+        currentCamera.viewport.toGlobal(
+          engine.getRenderWidth(),
+          engine.getRenderHeight()
+        )
+      );
+
+      overlayDiv.style.left = `${screenPosition.x}px`;
+      overlayDiv.style.top = `${screenPosition.y - 70}px`; // Offset above the mesh
+    }
+  });
+
+  return overlayDiv;
+}
+
       function getMeshProperties(mesh) {
         const pos = mesh.position;
         const rot = mesh.rotation;
@@ -479,7 +515,7 @@ camera.upperRadiusLimit = 950;
             currentCamera.setTarget(bounds.center);
           }
 
-          // Set up action managers and click handlers for each mesh
+          // Set up action managers and check for specific mesh name
           loadedMeshes.forEach(mesh => {
             mesh.actionManager = new BABYLON.ActionManager(currentScene);
             mesh.actionManager.registerAction(
@@ -491,10 +527,14 @@ camera.upperRadiusLimit = 950;
                 }
               )
             );
+
+            // Check for specific mesh name and create overlay
+            if (mesh.name === 'G-__559002_G-__559002_Material'  || mesh.name === 'G-__564519_G-__564519_Material' || mesh.name === 'G-__559191_G-__559191_Material') {
+              createMeshOverlay(mesh);
+            }
           });
         }
         
-        // Update mesh list
         updateMeshList(loadedMeshes);
       }
     } catch (error) {
