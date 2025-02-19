@@ -19,7 +19,7 @@ class CapsuleComponent extends React.Component {
           position: 'fixed',
           backgroundColor: 'white',
           borderRadius: '9999px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 4px 6px rgba(28, 174, 57, 0.1)',
           padding: '8px 16px',
           display: 'flex',
           alignItems: 'center',

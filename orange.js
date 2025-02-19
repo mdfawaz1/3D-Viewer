@@ -5,7 +5,7 @@
 
 
 
-class RedCapsuleComponent extends React.Component {
+class orangeCapsuleComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = { active: false };
@@ -24,7 +24,7 @@ class RedCapsuleComponent extends React.Component {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          border: '1px solid rgb(185, 16, 16)',
+          border: '1px solid rgb(185, 95, 16)',
           animation: 'fade-in 0.3s ease-in-out',
         },
       },
@@ -32,7 +32,7 @@ class RedCapsuleComponent extends React.Component {
         style: {
           width: '12px',
           height: '12px',
-          backgroundColor: '#EF4444',
+          backgroundColor: '#F97316',
           borderRadius: '50%',
           animation: 'pulse 1.5s infinite',
         },
@@ -40,7 +40,7 @@ class RedCapsuleComponent extends React.Component {
       e(
         'span',
         { style: { fontSize: '14px', fontWeight: '500', color: '#374151' } },
-        'Building 4'
+        'Building 5'
       ),
       e(
         'button',

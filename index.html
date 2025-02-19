@@ -9,6 +9,9 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="like_button.js"></script>
+  <script src="red.js"></script>
+  <script src="orange.js"></script>
+</head>
 <body>
   <div id="controlPanel">
     <input type="file" id="fileInput" accept=".glb,.obj,.gltf" /><br/>
@@ -140,6 +143,73 @@
 
       overlayDiv.style.left = `${screenPosition.x}px`;
       overlayDiv.style.top = `${screenPosition.y - 70}px`; // Offset above the mesh
+    }
+  });
+
+  return overlayDiv;
+}
+
+function createRedMeshOverlay(mesh) {
+  // Create a div element to hold the React component
+  const overlayDiv = document.createElement('div');
+  overlayDiv.className = 'capsule_component_containerred';
+  overlayDiv.style.position = 'absolute';
+  overlayDiv.style.zIndex = '1200';
+  document.body.appendChild(overlayDiv);
+
+  // Create React root and render component
+  const root = ReactDOM.createRoot(overlayDiv);
+  root.render(React.createElement(RedCapsuleComponent, {}));
+
+  // Update overlay position in render loop
+  currentScene.registerBeforeRender(() => {
+    if (mesh && overlayDiv) {
+      const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+      const screenPosition = BABYLON.Vector3.Project(
+        meshPosition,
+        BABYLON.Matrix.Identity(),
+        currentScene.getTransformMatrix(),
+        currentCamera.viewport.toGlobal(
+          engine.getRenderWidth(),
+          engine.getRenderHeight()
+        )
+      );
+
+      overlayDiv.style.left = `${screenPosition.x}px`;
+      overlayDiv.style.top = `${screenPosition.y - 100}px`; // Offset above the mesh
+    }
+  });
+
+  return overlayDiv;
+}
+function createOrangeMeshOverlay(mesh) {
+  // Create a div element to hold the React component
+  const overlayDiv = document.createElement('div');
+  overlayDiv.className = 'capsule_component_containerred-orange';   
+  overlayDiv.style.position = 'absolute';
+  overlayDiv.style.zIndex = '1200';
+  document.body.appendChild(overlayDiv);
+
+  // Create React root and render component
+  const root = ReactDOM.createRoot(overlayDiv);
+  root.render(React.createElement(orangeCapsuleComponent, {}));
+
+  // Update overlay position in render loop
+  currentScene.registerBeforeRender(() => {
+    if (mesh && overlayDiv) {
+      const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+      const screenPosition = BABYLON.Vector3.Project(
+        meshPosition,
+        BABYLON.Matrix.Identity(),
+        currentScene.getTransformMatrix(),
+        currentCamera.viewport.toGlobal(
+          engine.getRenderWidth(),
+          engine.getRenderHeight()
+        )
+      );
+
+      overlayDiv.style.left = `${screenPosition.x}px`;
+      overlayDiv.style.top = `${screenPosition.y - 60}px`; // Offset above the mesh
     }
   });
 
@@ -531,6 +601,16 @@ camera.upperRadiusLimit = 950;
             // Check for specific mesh name and create overlay
             if (mesh.name === 'G-__559002_G-__559002_Material'  || mesh.name === 'G-__564519_G-__564519_Material' || mesh.name === 'G-__559191_G-__559191_Material') {
               createMeshOverlay(mesh);
+
+              
+            }
+
+            // Check for specific mesh names and create overlays
+            if (mesh.name === 'G-__564663_G-__564663_Material') {
+              createRedMeshOverlay(mesh);
+            }
+            if (mesh.name === 'G-__562197_G-__562197_Material') {
+                createOrangeMeshOverlay(mesh);
             }
           });
         }
