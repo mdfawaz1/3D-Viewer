@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Babylon.js GLB Viewer - Extended Camera Controls</title>
+ <link rel="stylesheet" href="index.css">
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+</head>
+<body>
+  <div id="controlPanel">
+    <input type="file" id="fileInput" accept=".glb,.obj,.gltf" /><br/>
+    <div class="btn-group">
+      <button id="resetCamera" class="btn">Reset Camera</button>
+      <button id="toggleInspector" class="btn">Toggle Inspector</button>
+    </div>
+    <div class="btn-group">
+      <button id="switchCamera" class="btn">Switch Camera</button>
+      <button id="initiateFPP" class="btn">Initiate FPP</button>
+    </div>
+    <div class="btn-group">
+      <button id="moveUp" class="btn">Move Up</button>
+      <button id="moveDown" class="btn">Move Down</button>
+    </div>
+    <div style="margin-top:10px; font-size:12px;">
+      <strong>Camera Controls:</strong><br/>
+      <em>ArcRotate:</em> Rotate (left drag), Zoom (wheel/pinch), Pan (right drag/Shift+left drag), Keyboard (arrow keys/WASD)<br/>
+      <em>Universal:</em> Move (WASD/arrow), Look (mouse), Jump (space)
+    </div>
+  </div>
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<nav class="menu">
+  <input type="checkbox" href="#" class="menu-open" name="menu-open" id="menu-open" />
+  <label class="menu-open-button" for="menu-open"> 
+    <span class="lines line-1"></span> 
+    <span class="lines line-2"></span> 
+    <span class="lines line-3"></span> 
+  </label>
+  <a href="#" class="menu-item item-1"> 
+    <i class="fa fa-anchor"></i> 
+  </a> 
+  <a href="#" class="menu-item item-2"> 
+    <i class="fa fa-coffee"></i> 
+  </a> 
+  <a href="#" class="menu-item item-3"> 
+    <i class="fa fa-heart"></i>
+  </a> 
+  <a href="#" class="menu-item item-4"> 
+    <i class="fa fa-microphone"></i> 
+  </a> 
+  <a href="#" class="menu-item item-5"> 
+    <i class="fa fa-star"></i> 
+  </a> 
+  <a href="#" class="menu-item item-6"> 
+    <i class="fa fa-diamond"></i> 
+  </a> 
+</nav>
+
+  <div id="propertyPanel"></div>
+  <div id="meshList">
+   <h3 id="meshListToggle">Mesh List ▾</h3>
+    <div id="meshListContent"></div>
+  </div>
+  <div id="fpsCounter">FPS: 0</div>
+  <canvas id="renderCanvas"></canvas>
+  <input type="file" id="objFileInput" accept=".obj" style="display:none">
+  <button id="loadObjBtn">Load OBJ Model</button>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46156385-1', 'cssscript.com');
+  ga('send', 'pageview');
+    window.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const fileInput = document.getElementById("fileInput");
+      const resetCameraBtn = document.getElementById("resetCamera");
+      const toggleInspectorBtn = document.getElementById("toggleInspector");
+      const switchCameraBtn = document.getElementById("switchCamera");
+      const initiateFPPBtn = document.getElementById("initiateFPP");
+      const moveUpBtn = document.getElementById("moveUp");
+      const moveDownBtn = document.getElementById("moveDown");
+      const fpsCounter = document.getElementById("fpsCounter");
+      const propertyPanel = document.getElementById("propertyPanel");
+      const meshListPanel = document.getElementById("meshList");
+      const meshListContent = document.getElementById("meshListContent");
+      const loadObjBtn = document.getElementById('loadObjBtn');
+      const objFileInput = document.getElementById('objFileInput');
+      
+      let currentScene = null;
+      let currentCamera = null;
+      let moveInterval = null;
+      
+      const meshSelectedEvent = new CustomEvent('meshSelected', { detail: { properties: null } });
+      
+      function calculateModelBounds(meshes) {
+        let min = new BABYLON.Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+        let max = new BABYLON.Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+        meshes.forEach(mesh => {
+          const bbox = mesh.getBoundingInfo().boundingBox;
+          min = BABYLON.Vector3.Minimize(min, bbox.minimum);
+          max = BABYLON.Vector3.Maximize(max, bbox.maximum);
+        });
+        return {
+          center: BABYLON.Vector3.Center(min, max),
+          size: max.subtract(min)
+        };
+      }
+      
+      function getMeshProperties(mesh) {
+        const pos = mesh.position;
+        const rot = mesh.rotation;
+        const scale = mesh.scaling;
+        const bbox = mesh.getBoundingInfo().boundingBox;
+        const properties = {
+          "Basic Properties": {
+            "Name": mesh.name,
+            "Unique ID": mesh.uniqueId,
+            "Visible": mesh.isVisible,
+            "Enabled": mesh.isEnabled(),
+            "Pickable": mesh.isPickable
+          },
+          "Transform": {
+            "Position": `X: ${pos.x.toFixed(3)}, Y: ${pos.y.toFixed(3)}, Z: ${pos.z.toFixed(3)}`,
+            "Rotation": `X: ${rot.x.toFixed(3)}, Y: ${rot.y.toFixed(3)}, Z: ${rot.z.toFixed(3)}`,
+            "Scaling": `X: ${scale.x.toFixed(3)}, Y: ${scale.y.toFixed(3)}, Z: ${scale.z.toFixed(3)}`
+          },
+          "Geometry": {
+            "Vertices Count": mesh.getTotalVertices(),
+            "Faces Count": (mesh.getTotalIndices() / 3) || 0,
+            "Bounding Box Min": `X: ${bbox.minimum.x.toFixed(3)}, Y: ${bbox.minimum.y.toFixed(3)}, Z: ${bbox.minimum.z.toFixed(3)}`,
+            "Bounding Box Max": `X: ${bbox.maximum.x.toFixed(3)}, Y: ${bbox.maximum.y.toFixed(3)}, Z: ${bbox.maximum.z.toFixed(3)}`
+          }
+        };
+        if (mesh.material) {
+          properties["Material"] = {
+            "Name": mesh.material.name,
+            "Type": mesh.material.getClassName(),
+            "Alpha": mesh.material.alpha
+          };
+        }
+        if (mesh.metadata) {
+          properties["Custom Metadata"] = mesh.metadata;
+        }
+        return properties;
+      }
+      
+      function updatePropertyPanel(properties) {
+        if (!properties) {
+          propertyPanel.style.display = "none";
+          propertyPanel.innerHTML = "";
+          return;
+        }
+        propertyPanel.style.display = "block";
+        propertyPanel.innerHTML = "";
+        Object.entries(properties).forEach(([cat, props]) => {
+          const catDiv = document.createElement("div");
+          catDiv.innerHTML = `<h3>${cat}</h3>`;
+          Object.entries(props).forEach(([key, val]) => {
+            const row = document.createElement("div");
+            row.className = "property-row";
+            row.innerHTML = `<span>${key}:</span><span>${val}</span>`;
+            catDiv.appendChild(row);
+          });
+          propertyPanel.appendChild(catDiv);
+        });
+        const exportBtn = document.createElement("button");
+        exportBtn.textContent = "Export Properties";
+        exportBtn.className = "btn";
+        exportBtn.onclick = () => {
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(properties, null, 2));
+          const link = document.createElement('a');
+          link.setAttribute("href", dataStr);
+          link.setAttribute("download", properties["Basic Properties"]["Name"] + "_properties.json");
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        };
+        propertyPanel.appendChild(exportBtn);
+        meshSelectedEvent.detail.properties = properties;
+        window.dispatchEvent(meshSelectedEvent);
+      }
+      
+      function updateMeshList(meshes) {
+        meshListContent.innerHTML = "";
+        if (!meshes.length) {
+          meshListPanel.style.display = "none";
+          return;
+        }
+        meshListPanel.style.display = "block";
+        meshes.forEach(mesh => {
+          const item = document.createElement("div");
+          item.className = "mesh-item";
+          item.textContent = mesh.name;
+          item.onclick = () => {
+            const pickResult = { hit: true, pickedMesh: mesh };
+            currentScene.onPointerDown(null, pickResult);
+            
+            // Get best view positions
+            const viewInfo = getMeshBestView(mesh);
+            
+            // Animate camera to new position
+            if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+                // For ArcRotateCamera
+                BABYLON.Animation.CreateAndStartAnimation(
+                    "cameraMove",
+                    currentCamera,
+                    "target",
+                    30,
+                    30,
+                    currentCamera.target,
+                    viewInfo.targetPosition,
+                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                );
+                
+                BABYLON.Animation.CreateAndStartAnimation(
+                    "cameraPosition",
+                    currentCamera,
+                    "position",
+                    30,
+                    30,
+                    currentCamera.position,
+                    viewInfo.cameraPosition,
+                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                );
+            } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+                // For UniversalCamera
+                BABYLON.Animation.CreateAndStartAnimation(
+                    "cameraMove",
+                    currentCamera,
+                    "position",
+                    30,
+                    30,
+                    currentCamera.position,
+                    viewInfo.cameraPosition,
+                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                );
+                currentCamera.setTarget(viewInfo.targetPosition);
+            }
+          };
+          meshListContent.appendChild(item);
+        });
+      }
+      async function createScene(file = null) {
+        if (currentScene) { currentScene.dispose(); }
+        const scene = new BABYLON.Scene(engine);
+        currentScene = scene;
+        scene.clearColor = new BABYLON.Color3(0.97, 0.97, 0.95);
+        
+        // Default camera as ArcRotateCamera
+        const camera = new BABYLON.ArcRotateCamera("arcCam", 0, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
+        camera.lowerBetaLimit = 0.1; // Prevents camera from going below the model
+camera.upperBetaLimit = Math.PI / 2; // Restricts angle to not go above top view
+camera.lowerRadiusLimit = 5;
+camera.upperRadiusLimit = 950; 
+        camera.attachControl(canvas, true);
+        camera.minZ = 0.1;
+        currentCamera = camera;
+        
+        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+        light.intensity = 0.7;
+        
+        const highlightMaterial = new BABYLON.StandardMaterial("hlMat", scene);
+        highlightMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0);
+        highlightMaterial.emissiveColor = new BABYLON.Color3(0.4, 0.4, 0);
+        highlightMaterial.alpha = 0.8;
+        
+        let loadedMeshes = [];
+        
+        resetCameraBtn.onclick = () => {
+          if (loadedMeshes.length) {
+            const { center, size } = calculateModelBounds(loadedMeshes);
+            currentCamera.position = new BABYLON.Vector3(
+              center.x,
+              center.y + size.y,
+              center.z + Math.max(size.x, size.y, size.z) * 2
+            );
+            if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+              currentCamera.target = center;
+            } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+              currentCamera.setTarget(center);
+            }
+          } else {
+            if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+              currentCamera.target = BABYLON.Vector3.Zero();
+            }
+          }
+        };
+        
+        toggleInspectorBtn.onclick = () => {
+          if (scene.debugLayer.isVisible()) {
+            scene.debugLayer.hide();
+          } else {
+            scene.debugLayer.show({ embedMode: true });
+          }
+        };
+        
+        try {
+          let result;
+          if (file) {
+            result = await BABYLON.SceneLoader.ImportMeshAsync("", "", file, scene);
+          }
+          if (result) {
+            loadedMeshes = result.meshes.filter(m => m.name !== "__root__");
+            if (loadedMeshes.length) {
+              const bounds = calculateModelBounds(loadedMeshes);
+              currentCamera.position = new BABYLON.Vector3(
+                bounds.center.x,
+                bounds.center.y + bounds.size.y,
+                bounds.center.z + Math.max(bounds.size.x, bounds.size.y, bounds.size.z) * 2
+              );
+              if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+                currentCamera.target = bounds.center;
+              } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+                currentCamera.setTarget(bounds.center);
+              }
+            }
+            updateMeshList(loadedMeshes);
+          }
+        } catch (error) {
+          console.error("Error loading model:", error);
+          const errDiv = document.createElement("div");
+          errDiv.style.color = "red";
+          errDiv.textContent = "Error loading model: " + error.message;
+          document.getElementById("controlPanel").appendChild(errDiv);
+        }
+        
+        let highlightedMesh = null;
+        let originalMaterial = null;
+        
+        function clearHighlight() {
+            if (highlightedMesh) {
+                highlightedMesh.material = originalMaterial;
+                highlightedMesh = null;
+                originalMaterial = null;
+            }
+        }
+        
+        scene.onPointerDown = function (evt, pickResult) {
+            if (pickResult.hit) {
+                if (highlightedMesh === pickResult.pickedMesh) {
+                    return;
+                }
+                
+                clearHighlight();
+                
+                highlightedMesh = pickResult.pickedMesh;
+                originalMaterial = highlightedMesh.material;
+                
+                // Store clone of original material to prevent shared reference issues
+                if (originalMaterial) {
+                    originalMaterial = originalMaterial.clone("originalMat");
+                }
+                
+                highlightedMesh.material = new BABYLON.StandardMaterial("highlightMat", scene);
+                highlightedMesh.material.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
+                highlightedMesh.material.specularColor = new BABYLON.Color3(1, 1, 1); // White
+
+            } else {
+                clearHighlight();
+                updatePropertyPanel(null);
+            }
+        };
+        
+        // Add this to your mesh loading completion handler
+        scene.onMeshLoaded = function(mesh) {
+            if (mesh.material) {
+                mesh.material = mesh.material.clone("clonedMat");
+            }
+        };
+        
+        engine.runRenderLoop(() => {
+          scene.render();
+          fpsCounter.textContent = "FPS: " + engine.getFps().toFixed(1);
+        });
+        
+        scene.onDisposeObservable.add(() => {
+          loadedMeshes = [];
+          meshListPanel.style.display = "none";
+        });
+        return scene;
+      }
+      
+      // Switch camera between ArcRotateCamera and UniversalCamera
+      switchCameraBtn.onclick = () => {
+        if (!currentScene || !currentCamera) return;
+        const oldCam = currentCamera;
+        let newCam;
+        if (oldCam instanceof BABYLON.ArcRotateCamera) {
+          newCam = new BABYLON.UniversalCamera("univCam", oldCam.position.clone(), currentScene);
+          newCam.setTarget(oldCam.target || BABYLON.Vector3.Zero());
+          newCam.attachControl(canvas, true);
+        } else {
+          const target = (oldCam.getTarget && oldCam.getTarget()) || BABYLON.Vector3.Zero();
+          const direction = oldCam.position.subtract(target);
+          const radius = direction.length();
+          const alpha = Math.atan2(direction.z, direction.x);
+          const beta = Math.acos(direction.y / radius);
+          newCam = new BABYLON.ArcRotateCamera("arcCam", alpha, beta, radius, target, currentScene);
+          newCam.lowerBetaLimit = 0.1;
+  newCam.upperBetaLimit = Math.PI / 2;
+  newCam.lowerRadiusLimit = 5;
+  newCam.upperRadiusLimit = 950;
+  newCam.attachControl(canvas, true);
+          newCam.attachControl(canvas, true);
+        }
+        currentCamera = newCam;
+        oldCam.dispose();
+      };
+      
+      // Initiate FPP: force UniversalCamera mode
+      initiateFPPBtn.onclick = () => {
+        if (!currentScene || !currentCamera) return;
+        if (currentCamera instanceof BABYLON.UniversalCamera) return;
+        const oldCam = currentCamera;
+        const newCam = new BABYLON.UniversalCamera("univCam", oldCam.position.clone(), currentScene);
+        newCam.setTarget(oldCam.target || BABYLON.Vector3.Zero());
+        newCam.attachControl(canvas, true);
+        currentCamera = newCam;
+        oldCam.dispose();
+      };
+      
+      // Long press functionality for moving up & down
+      function startMove(direction) {
+    if (!currentCamera) return;
+    moveInterval = setInterval(() => {
+        if (currentCamera instanceof BABYLON.UniversalCamera) {
+            currentCamera.position.y += (direction === "up" ? 0.5 : -0.5); // Increased from 0.2
+        } else if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+            currentCamera.target = currentCamera.target.add(
+                new BABYLON.Vector3(0, direction === "up" ? 0.5 : -0.5, 0)
+            ); // Increased from 0.2
+        }
+    }, 16); // Changed from 50 to 16 for smoother movement (60fps)
+}
+      function stopMove() {
+        if (moveInterval) {
+          clearInterval(moveInterval);
+          moveInterval = null;
+        }
+      }
+      
+      // Attach long press events for move up / down buttons
+      ["mousedown", "touchstart"].forEach(ev => {
+        moveUpBtn.addEventListener(ev, (e) => { e.preventDefault(); startMove("up"); });
+        moveDownBtn.addEventListener(ev, (e) => { e.preventDefault(); startMove("down"); });
+      });
+      ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(ev => {
+        moveUpBtn.addEventListener(ev, stopMove);
+        moveDownBtn.addEventListener(ev, stopMove);
+      });
+      
+      // Initialize the scene without any model.
+      createScene();
+      
+      fileInput.addEventListener('change', async (event) => {
+  if (event.target.files && event.target.files[0]) {
+    const file = event.target.files[0];
+    try {
+      const result = await BABYLON.SceneLoader.ImportMeshAsync("", "", file, currentScene);
+      if (result) {
+        const loadedMeshes = result.meshes.filter(m => m.name !== "__root__");
+        
+        if (loadedMeshes.length) {
+          // Calculate bounds for camera positioning
+          const bounds = calculateModelBounds(loadedMeshes);
+          currentCamera.position = new BABYLON.Vector3(
+            bounds.center.x,
+            bounds.center.y + bounds.size.y,
+            bounds.center.z + Math.max(bounds.size.x, bounds.size.y, bounds.size.z) * 2
+          );
+          
+          if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+            currentCamera.target = bounds.center;
+          } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+            currentCamera.setTarget(bounds.center);
+          }
+
+          // Set up action managers and click handlers for each mesh
+          loadedMeshes.forEach(mesh => {
+            mesh.actionManager = new BABYLON.ActionManager(currentScene);
+            mesh.actionManager.registerAction(
+              new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPickTrigger,
+                () => {
+                  const properties = getMeshProperties(mesh);
+                  updatePropertyPanel(properties);
+                }
+              )
+            );
+          });
+        }
+        
+        // Update mesh list
+        updateMeshList(loadedMeshes);
+      }
+    } catch (error) {
+      console.error("Error loading model:", error);
+      const errDiv = document.createElement("div");
+      errDiv.style.color = "red";
+      errDiv.textContent = "Error loading model: " + error.message;
+      document.getElementById("controlPanel").appendChild(errDiv);
+    }
+  }
+});
+      
+      window.addEventListener("resize", () => {
+        engine.resize();
+      });
+
+      loadObjBtn.onclick = () => {
+        objFileInput.click();
+      };
+
+      objFileInput.onchange = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            BABYLON.SceneLoader.ImportMesh(
+                "", 
+                "data:", 
+                e.target.result,
+                currentScene,
+                function (meshes) {
+                    // Center and scale model to fit view
+                    const center = BABYLON.Mesh.ComputeAbsoluteCenter(meshes);
+                    meshes.forEach(mesh => {
+                        mesh.position = center;
+                    });
+                }
+            );
+        };
+        reader.readAsDataURL(file);
+      };
+    });
+
+    function getMeshBestView(mesh) {
+        // Get mesh bounding info
+        const boundingInfo = mesh.getBoundingInfo();
+        const center = boundingInfo.boundingBox.centerWorld;
+        const diagonal = boundingInfo.boundingBox.maximumWorld.subtract(boundingInfo.boundingBox.minimumWorld);
+        const size = Math.max(diagonal.x, diagonal.y, diagonal.z);
+        
+        // Calculate camera position based on mesh size
+        const offset = size * 2; // Adjust this multiplier to change the zoom level
+        
+        return {
+            targetPosition: center,
+            cameraPosition: new BABYLON.Vector3(
+                center.x,
+                center.y + size * 0.5, // Position slightly above center
+                center.z + offset // Position back enough to see the full mesh
+            )
+        };
+    }
+  </script>
+</body>
+</html>
+
+
