@@ -89,7 +89,7 @@
 
   <div id="propertyPanel"></div>
   <div id="meshList">
-   <h3 id="meshListToggle">Mesh List ▾</h3>
+    <h3 id="meshListToggle">Asset list ▸</h3>
     <div id="meshListContent"></div>
   </div>
   <div id="fpsCounter">FPS: 0</div>
@@ -121,6 +121,16 @@
       const loadObjBtn = document.getElementById('loadObjBtn');
       const objFileInput = document.getElementById('objFileInput');
       
+      const meshListToggle = document.getElementById("meshListToggle");
+      const meshList = document.getElementById("meshList");
+
+      // Add click handler for toggle
+      meshListToggle.addEventListener('click', () => {
+          meshList.classList.toggle('expanded');
+          const arrow = meshListToggle.textContent.includes('▾') ? '▸' : '▾';
+          meshListToggle.textContent = `Asset List ${arrow}`;
+      });
+
       let currentScene = null;
       let currentCamera = null;
       let moveInterval = null;
@@ -353,63 +363,64 @@ function applyCustomGlow(mesh, color) {
       function updateMeshList(meshes) {
         meshListContent.innerHTML = "";
         if (!meshes.length) {
-          meshListPanel.style.display = "none";
-          return;
+            meshList.style.display = "none";
+            return;
         }
-        meshListPanel.style.display = "block";
+        meshList.style.display = "block";
+        meshList.classList.add('expanded'); // Start expanded when new meshes are loaded
+        meshListToggle.textContent = "Asset List ▾"; // Reset arrow
+        
         meshes.forEach(mesh => {
-          const item = document.createElement("div");
-          item.className = "mesh-item";
-          item.textContent = mesh.name;
-          item.onclick = () => {
-            const pickResult = { hit: true, pickedMesh: mesh };
-            currentScene.onPointerDown(null, pickResult);
-            
-            // Get best view positions
-            const viewInfo = getMeshBestView(mesh);
-            
-            // Animate camera to new position
-            if (currentCamera instanceof BABYLON.ArcRotateCamera) {
-                // For ArcRotateCamera
-                BABYLON.Animation.CreateAndStartAnimation(
-                    "cameraMove",
-                    currentCamera,
-                    "target",
-                    30,
-                    30,
-                    currentCamera.target,
-                    viewInfo.targetPosition,
-                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-                );
+            const item = document.createElement("div");
+            item.className = "mesh-item";
+            item.textContent = mesh.name;
+            item.onclick = () => {
+                const pickResult = { hit: true, pickedMesh: mesh };
+                currentScene.onPointerDown(null, pickResult);
                 
-                BABYLON.Animation.CreateAndStartAnimation(
-                    "cameraPosition",
-                    currentCamera,
-                    "position",
-                    30,
-                    30,
-                    currentCamera.position,
-                    viewInfo.cameraPosition,
-                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-                );
-            } else if (currentCamera instanceof BABYLON.UniversalCamera) {
-                // For UniversalCamera
-                BABYLON.Animation.CreateAndStartAnimation(
-                    "cameraMove",
-                    currentCamera,
-                    "position",
-                    30,
-                    30,
-                    currentCamera.position,
-                    viewInfo.cameraPosition,
-                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-                );
-                currentCamera.setTarget(viewInfo.targetPosition);
-            }
-          };
-          meshListContent.appendChild(item);
+                // Get best view positions
+                const viewInfo = getMeshBestView(mesh);
+                
+                // Animate camera to new position
+                if (currentCamera instanceof BABYLON.ArcRotateCamera) {
+                    BABYLON.Animation.CreateAndStartAnimation(
+                        "cameraMove",
+                        currentCamera,
+                        "target",
+                        30,
+                        30,
+                        currentCamera.target,
+                        viewInfo.targetPosition,
+                        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                    );
+                    
+                    BABYLON.Animation.CreateAndStartAnimation(
+                        "cameraPosition",
+                        currentCamera,
+                        "position",
+                        30,
+                        30,
+                        currentCamera.position,
+                        viewInfo.cameraPosition,
+                        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                    );
+                } else if (currentCamera instanceof BABYLON.UniversalCamera) {
+                    BABYLON.Animation.CreateAndStartAnimation(
+                        "cameraMove",
+                        currentCamera,
+                        "position",
+                        30,
+                        30,
+                        currentCamera.position,
+                        viewInfo.cameraPosition,
+                        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+                    );
+                    currentCamera.setTarget(viewInfo.targetPosition);
+                }
+            };
+            meshListContent.appendChild(item);
         });
-      }
+    }
       async function createScene(file = null) {
     if (currentScene) { currentScene.dispose(); }
     const scene = new BABYLON.Scene(engine);

@@ -92,7 +92,7 @@ body, html {
     bottom: 15px;
     left: 15px;
     background: rgba(50, 50, 50, 0.9);
-    padding: 10px;
+    padding: 0px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     color: #fff;
@@ -490,4 +490,99 @@ transition: all 0.3s ease 0s;
 }
 .dropdown-content{
   margin-left: 11px;
+}
+
+.mesh-list {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    color: white;
+    width: 150px;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.mesh-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.mesh-list-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.3s ease;
+}
+
+.toggle-btn.collapsed {
+    transform: rotate(180deg);
+}
+
+.mesh-list-content {
+    max-height: 500px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+}
+
+.mesh-list-content.collapsed {
+    max-height: 0;
+    overflow: hidden;
+}
+
+.mesh-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mesh-item:hover {
+    background: rgba(24, 134, 198, 0.1);
+}
+
+/* Add these styles to your existing CSS */
+#meshListContent {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+#meshList.expanded #meshListContent {
+    max-height: 500px; /* Adjust this value based on your needs */
+    overflow-y: auto;
+}
+
+#meshListToggle {
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+    padding: 10px;
+    background-color: #253ac4;
+    border-bottom: 1px solid #ddd;
+}
+
+#meshListToggle:hover {
+    background-color: #0f299a;
+}
+
+.rotate-arrow {
+    transform: rotate(-90deg);
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+#meshList.expanded .rotate-arrow {
+    transform: rotate(0deg);
 }
