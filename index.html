@@ -9,13 +9,15 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+  <script src='https://unpkg.com/maplibre-gl@5.1.0/dist/maplibre-gl.js'></script>
+<link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.1.0/dist/maplibre-gl.css' />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="like_button.js"></script>
   <script src="red.js"></script>
   <script src="orange.js"></script>
   <script src="chart.js"></script>
-  <script>        const chart = new ChartComponent();
-        chart.componentDidMount();</script>
+  <!-- <script>        const chart = new ChartComponent();
+        chart.componentDidMount();</script> -->
 </head>
 <body>
   <div id="controlPanel" class="bottom-controls">
@@ -64,6 +66,15 @@
     </div>
 </div>
 
+<!-- Add this HTML right after your control-buttons-container div -->
+<div class="view-toggle-container">
+    <label class="switch">
+        <input type="checkbox" id="viewToggle" checked>
+        <span class="slider round"></span>
+    </label>
+    <span class="toggle-label">3D Model View</span>
+</div>
+
   <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
   <div id="propertyPanel"></div>
@@ -72,6 +83,10 @@
     <div id="meshListContent"></div>
   </div>
   <div id="fpsCounter">FPS: 0</div>
+  <!-- Add map container -->
+  <div id="map"></div>
+  
+  <!-- Existing canvas for 3D model -->
   <canvas id="renderCanvas"></canvas>
   <input type="file" id="objFileInput" accept=".obj" style="display:none">
   <button id="loadObjBtn">Load OBJ Model</button>
@@ -505,59 +520,54 @@ function applyCustomGlow(mesh, color) {
     const scene = new BABYLON.Scene(engine);
     currentScene = scene;
     
-    // Change background color to a darker shade
-    scene.clearColor = new BABYLON.Color3(222 / 255, 228 / 255, 231 / 255);
+    // Make scene background transparent to see the map
+    scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+    scene.autoClear = false; // Important for transparency
 
-    // Create and configure the environment
-    const environmentTexture = new BABYLON.CubeTexture(
-        "/example.env",  // You can replace with your own .env file path
-        scene
-    );
+    // Remove skybox and environment texture setup
+    // const environmentTexture = new BABYLON.CubeTexture(
+    //     "/example.env",
+    //     scene
+    // );
+    // const skybox = scene.createDefaultSkybox(environmentTexture, true, 10000, 0.00);
     
-    // Create skybox
-    const skybox = scene.createDefaultSkybox(environmentTexture, true, 10000, 0.00);
-    
-    // Enable image processing to make the skybox look better
+    // Keep the image processing pipeline but adjust settings
     const pipeline = new BABYLON.DefaultRenderingPipeline("pipeline", true, scene);
     if (pipeline) {
-        pipeline.imageProcessing.exposure = 0.6;
-        pipeline.imageProcessing.contrast = 1.6;
+        pipeline.imageProcessing.exposure = 1.0;
+        pipeline.imageProcessing.contrast = 1.2;
         pipeline.toneMappingEnabled = true;
     }
 
-    // Rest of your existing createScene code...
+    // Update camera settings
     const camera = new BABYLON.ArcRotateCamera("arcCam", 0, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
-    camera.lowerBetaLimit = 0.1; // Prevents camera from going below the model
-camera.upperBetaLimit = Math.PI / 2; // Restricts angle to not go above top view
-camera.lowerRadiusLimit = 5;
-camera.upperRadiusLimit = 950; 
+    camera.lowerBetaLimit = 0.1;
+    camera.upperBetaLimit = Math.PI / 2;
+    camera.lowerRadiusLimit = 5;
+    camera.upperRadiusLimit = 950;
+    camera.useFramingBehavior = true;
+const framingBehavior = camera.getBehaviorByName("Framing");
+if (framingBehavior) {
+    framingBehavior.zoomStopsAnimation = false;
+    framingBehavior.defaultElevation = Math.PI / 4;
+    framingBehavior.elevationReturnTime = 1500;
+    framingBehavior.elevationReturnWaitTime = 1000;
+}
     camera.attachControl(canvas, true);
     camera.minZ = 0.1;
     currentCamera = camera;
     
-    // Update lighting setup
+    // Adjust lighting for better visibility over map
     const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
-    hemiLight.intensity = 0.5;
-    hemiLight.groundColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-    hemiLight.specular = new BABYLON.Color3(0.5, 0.5, 0.5);
+    hemiLight.intensity = 0.7;
+    hemiLight.groundColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    hemiLight.specular = new BABYLON.Color3(0.3, 0.3, 0.3);
 
     const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -2, -1), scene);
-    dirLight.intensity = 0.15;
+    dirLight.intensity = 0.3;
     dirLight.position = new BABYLON.Vector3(20, 20, 20);
 
-    // Update default material settings
-    scene.onMeshImportedObservable.add((mesh) => {
-    if (mesh.material) {
-        mesh.material = new BABYLON.StandardMaterial("mat_" + mesh.uniqueId, scene);
-        mesh.material.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-        mesh.material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);  // Reduced from 0.5
-        mesh.material.specularPower = 64;                                  // Increased from 16
-        mesh.material.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-        mesh.material.emissiveColor = new BABYLON.Color3(0.05, 0.05, 0.05);  // Reduced from 0.1
-        mesh.material.backFaceCulling = false;
-    }
-});
-
+    // ... rest of your existing createScene code...
     const light = new BABYLON.HemisphericLight("li∂ght", new BABYLON.Vector3(0, 1, 0), scene);
     light.intensity = 0.7;
     
@@ -704,6 +714,62 @@ scene.onPointerDown = function (evt, pickResult) {
       loadedMeshes = [];
       meshListPanel.style.display = "none";
     });
+
+    // Create a custom layer for the 3D model
+    const customLayer = {
+      id: '3d-model',
+      type: 'custom',
+      renderingMode: '3d',
+      onAdd(map, gl) {
+        // Use existing scene and engine
+        this.scene = currentScene;
+        this.engine = engine;
+        this.map = map;
+      },
+      render(gl, matrix) {
+        const cameraMatrix = BABYLON.Matrix.FromArray(matrix.defaultProjectionData.mainMatrix);
+        
+        // Create world-view-projection matrix
+        const worldMatrix = BABYLON.Matrix.Compose(
+          new BABYLON.Vector3(worldScale, worldScale, worldScale),
+          BABYLON.Quaternion.FromEulerAngles(worldRotate[0], worldRotate[1], worldRotate[2]),
+          new BABYLON.Vector3(worldOriginMercator.x, worldOriginMercator.y, worldOriginMercator.z)
+        );
+        
+        const wvpMatrix = worldMatrix.multiply(cameraMatrix);
+        currentCamera.freezeProjectionMatrix(wvpMatrix);
+        
+        currentScene.render(false);
+        this.map.triggerRepaint();
+      }
+    };
+
+    // Add the custom layer to the map
+    map.on('style.load', () => {
+      map.addLayer(customLayer);
+    });
+
+    // In your createScene function, after creating the scene
+    scene.preventDefaultOnPointerDown = false;
+    scene.preventDefaultOnPointerUp = false;
+    scene.preventDefaultOnPointerMove = false;
+
+    // Modify the camera control behavior
+    camera.attachControl(canvas, true, false, false); // Add false parameters to prevent default behaviors
+
+    // Add event listeners to handle both map and model interactions
+    canvas.addEventListener('pointerdown', (evt) => {
+        if (evt.button === 2) { // Right click
+            map.dragPan.enable();
+        } else {
+            map.dragPan.disable();
+        }
+    });
+
+    canvas.addEventListener('pointerup', () => {
+        map.dragPan.enable();
+    });
+
     return scene;
   }
       
@@ -911,6 +977,34 @@ scene.onPointerDown = function (evt, pickResult) {
         };
         reader.readAsDataURL(file);
       };
+
+      const viewToggle = document.getElementById('viewToggle');
+      const mapContainer = document.getElementById('map');
+      const renderCanvas = document.getElementById('renderCanvas');
+
+      viewToggle.addEventListener('change', function() {
+          const label = document.querySelector('.toggle-label');
+          if (this.checked) {
+              // Show 3D Model View
+              renderCanvas.style.opacity = '1';
+              renderCanvas.style.pointerEvents = 'auto';
+              mapContainer.style.opacity = '0.3';
+              label.textContent = '3D Model View';
+          } else {
+              // Show Map View
+              renderCanvas.style.opacity = '0.8';
+              renderCanvas.style.pointerEvents = 'none';
+              mapContainer.style.opacity = '1';
+              label.textContent = 'Map View';
+          }
+      });
+
+      // Update the initial canvas styles
+      renderCanvas.style.transition = 'opacity 0.3s ease';
+      mapContainer.style.transition = 'opacity 0.3s ease';
+      renderCanvas.style.opacity = '1';
+      renderCanvas.style.pointerEvents = 'auto';
+      mapContainer.style.opacity = '0.3';
     });
 
     function getMeshBestView(mesh) {
@@ -932,7 +1026,57 @@ scene.onPointerDown = function (evt, pickResult) {
             )
         };
     }
+
+    // Initialize map
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://api.maptiler.com/maps/basic/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL', // Get an API key from MapTiler
+      zoom: 18,
+      center: [148.9819, -35.3981],
+      pitch: 60,
+      interactive: true,
+      canvasContextAttributes: {antialias: true}
+    });
+
+    // World matrix parameters for positioning the model
+    const worldOrigin = [148.9819, -35.39847];
+    const worldAltitude = 0;
+    const worldRotate = [Math.PI / 2, 0, 0];
+
+    // Calculate mercator coordinates and scale
+    const worldOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(
+      worldOrigin,
+      worldAltitude
+    );
+    const worldScale = worldOriginMercator.meterInMercatorCoordinateUnits();
   </script>
+  <!-- Add CSS for map and canvas positioning -->
+  <style>
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      z-index: 1;
+    }
+
+    #renderCanvas {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .control-buttons-container {
+      z-index: 3;
+    }
+
+    #controlPanel {
+      z-index: 3;
+    }
+  </style>
 </body>
 </html>
 

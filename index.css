@@ -7,11 +7,15 @@ body, html {
     background: #333;
   }
   #renderCanvas {
+    position: absolute;
+    top: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
-    touch-action: none;
-    display: block;
-  }
+    z-index: 2;
+    pointer-events: auto;
+    background: transparent;
+}
   #controlPanel {
     position: fixed;
     top: 10px;
@@ -50,6 +54,82 @@ body, html {
   .btn-group {
     margin: 5px 0;
   }
+  /* Add these styles to your CSS */
+.view-toggle-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label {
+  margin-left: 10px;
+  color: #333;
+  font-weight: 500;
+  user-select: none;
+}
+
+/* Switch styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
   #fpsCounter {
     position: fixed;
     top: 15px;
