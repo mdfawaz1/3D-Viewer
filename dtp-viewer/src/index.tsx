@@ -16,6 +16,9 @@ import BuildingWidgets from './components/BuildingWidgets';
 import NavigationWidget from './components/NavigationWidget';
 import MeshList from './components/MeshList';
 import LoadingOverlay from './components/LoadingOverlay';
+import BuildingGraphs from './components/BuildingGraphs';
+import BottomNavbar from './components/BottomNavbar';
+import { CubeTexture } from 'babylonjs';
 
 interface IWidgetProps {
     uxpContext?: IContextProvider,
@@ -91,6 +94,16 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             const newScene = new BABYLON.Scene(newEngine);
             setScene(newScene);
             newScene.clearColor = new BABYLON.Color4(0.97, 0.97, 0.95, 1);
+
+            // Add skybox
+            const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 10000.0 }, newScene);
+            const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", newScene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("ex.env", newScene);
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+            skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+            skybox.material = skyboxMaterial;
 
             const camera = new BABYLON.ArcRotateCamera("arcCam", Math.PI, Math.PI / 3, 10, BABYLON.Vector3.Zero(), newScene);
             camera.lowerBetaLimit = 0.1;
@@ -360,7 +373,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
         const properties = getMeshProperties(mesh);
         setSelectedProperties(properties);
         setSelectedMesh(mesh);
-        setPanelVisible(true);
+        setPanelVisible(false);  // change to true
         setSelectedBuildingId(mesh.metadata?.buildingLabel || null);
 
         // Remove random color change code and keep only the highlight effect
@@ -706,7 +719,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 onClick={saveCurrentView}
                 style={{
                     position: 'fixed',
-                    top: '80px',
+                    bottom: '50px',
                     right: '20px',
                     zIndex: 1000,
                     padding: '8px 16px',
@@ -754,6 +767,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 height={200} 
             />
             <BuildingWidgets selectedBuilding={selectedBuildingId} />
+            <BuildingGraphs buildingId={selectedBuildingId} />
             <NavigationWidget 
                 onItemClick={handleNavigationClick}
                 selectedItem={selectedNavItem}
@@ -765,6 +779,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 scene={scene}
             />
             {isLoading && <LoadingOverlay />}
+            <BottomNavbar />
         </WidgetWrapper>
     );
 };

@@ -8,7 +8,7 @@ interface MeshListProps {
 }
 
 const MeshList: React.FC<MeshListProps> = ({ meshes, currentCamera, scene }) => {
-    const [isExpanded, setIsExpanded] = React.useState(true);
+    const [isExpanded, setIsExpanded] = React.useState(false);
     const [selectedMeshId, setSelectedMeshId] = React.useState<string | null>(null);
     const [originalMaterials] = React.useState(new Map<string, BABYLON.Material | null>());
 

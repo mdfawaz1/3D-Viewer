@@ -1,0 +1,124 @@
+.building-graphs {
+    position: fixed;
+    right: 20px;
+    top: 45%;
+    transform: translateY(-50%);
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 100;
+
+    .graph-card {
+        background: rgba(45, 45, 45, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        color: white;
+
+        &:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+    }
+
+    .table-stats {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+
+            th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            th {
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.7);
+            }
+        }
+    }
+
+    .bar-chart, .area-chart, .line-chart {
+        background: rgba(33, 33, 33, 0.65);
+
+        .recharts-legend-item-text {
+            color: #ffffff !important;
+        }
+    }
+
+    .line-chart {
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+
+                .stat-value {
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: #2196F3;
+                }
+
+                .stat-label {
+                    font-size: 0.8rem;
+                    color: #72777b;
+                    margin-top: 4px;
+                }
+            }
+        }
+    }
+
+    .custom-tooltip {
+        background: rgba(16, 42, 67, 0.95);
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(5, 199, 242, 0.2);
+        color: white;
+
+        .tooltip-time {
+            margin: 0 0 8px 0;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        p {
+            margin: 4px 0;
+            font-size: 0.85rem;
+        }
+    }
+}
+
+@media (max-width: 1400px) {
+    .building-graphs {
+        width: 280px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .building-graphs {
+        position: static;
+        transform: none;
+        width: 100%;
+        margin-top: 20px;
+    }
+} 

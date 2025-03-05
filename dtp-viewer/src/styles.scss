@@ -211,7 +211,7 @@
 .control-settings {
     position: fixed;
     margin-top: 30px;
-    bottom: 20px;
+    bottom: 50px;
     width: 130px;
     left: 20px;
     background: rgba(33, 33, 33, 0.65);
@@ -511,7 +511,7 @@
 .mesh-list {
     position: fixed;
     left: 20px;
-    top: 20px;
+    top: 10px;
     background: rgba(33, 33, 33, 0.85);
     backdrop-filter: blur(10px);
     border-radius: 16px;
@@ -519,7 +519,7 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     max-height: 70vh;
     overflow-y: auto;
-    min-width: 140px;
+    max-width: 240px;
     z-index: 1000;
     transition: all 0.9s ease;
     color: white;
@@ -626,7 +626,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(33, 33, 33, 0.85);
+    background: rgba(33, 33, 33, 0.75);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -634,6 +634,8 @@
     font-family: 'Courier New', monospace;
     color: rgba(0, 195, 255, 0.8);
     overflow: hidden;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 
     &::before {
         content: '';
@@ -643,8 +645,8 @@
         right: 0;
         bottom: 0;
         background: 
-            linear-gradient(90deg, rgba(0, 195, 255, 0.03) 1px, transparent 1px) 0 0 / 20px 20px,
-            linear-gradient(0deg, rgba(0, 195, 255, 0.03) 1px, transparent 1px) 0 0 / 20px 20px;
+            linear-gradient(90deg, rgba(0, 195, 255, 0.02) 1px, transparent 1px) 0 0 / 20px 20px,
+            linear-gradient(0deg, rgba(0, 195, 255, 0.02) 1px, transparent 1px) 0 0 / 20px 20px;
     }
 
     .loading-hud {
@@ -801,3 +803,5 @@
     50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
     100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
 }
+
+@import './components/BuildingGraphs.scss';
