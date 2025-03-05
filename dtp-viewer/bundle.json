@@ -1,0 +1,28 @@
+{
+    "id": "85d5b01e-2ed6-4832-ec2b-04b511cdc7ab",
+    "author": "",
+    "widgets": [
+        {
+            "id": "3D_viewer",
+            "name": "dtp_viewer",
+            "description": "A sample widget",
+            "icon": "",
+            "tags":[],
+            "category":"",
+            "isTemplate": false
+        }
+    ],
+    "sidebarLinks": [
+        
+    ],
+    "uis": [
+        {
+            "id": "3d_viewerlink",
+            "label":""
+        }
+       
+    ],
+    "menuItems": [
+        
+    ]
+}

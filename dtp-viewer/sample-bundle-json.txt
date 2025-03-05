@@ -1,0 +1,39 @@
+{
+    "id": "cf47cbb3-1255-40b3-f738-a500c66044b1",
+    "author": "",
+    "widgets": [
+        {
+            "id": "dtp_viewer",
+            "name": "dtp_viewer",
+            "description": "A sample widget",
+            "icon": "",
+            "tags":[]
+            "category":"",
+            "isTemplate": true/false // this will mark the widget as a template 
+        }
+    ],
+    "sidebarLinks": [
+        {
+            "id": "dtp_viewerLink",
+            "label": "",
+            "description": "",
+            "target": "",
+            "icon": "",
+            "roles":[]
+        }
+    ],
+    "uis": [
+        {
+            "id": "dtp_viewerLink",
+            "label":"",
+            "description": "",
+            "roles": []
+        }
+    ],
+    "menuItems": [
+        {
+            "id": "dtp_viewerLink",
+            "title": "dtp_viewer"
+        }
+    ]
+}
