@@ -19,6 +19,8 @@ import LoadingOverlay from './components/LoadingOverlay';
 import BuildingGraphs from './components/BuildingGraphs';
 import BottomNavbar from './components/BottomNavbar';
 import { CubeTexture } from 'babylonjs';
+import CCTVWidget from './components/CCTVWidget';
+import MeshGraph from './components/MeshGraph';
 
 interface IWidgetProps {
     uxpContext?: IContextProvider,
@@ -83,6 +85,13 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
     const [selectedNavItem, setSelectedNavItem] = React.useState<string | null>(null);
     const [currentModelId, setCurrentModelId] = React.useState<string | null>(null);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [isCCTVVisible, setIsCCTVVisible] = React.useState(false);
+    const [showMeshGraph, setShowMeshGraph] = React.useState(false);
+    const [meshGraphData, setMeshGraphData] = React.useState({
+        title: '',
+        value: 0,
+        subtitle: ''
+    });
 
     const initialCameraPosition = new BABYLON.Vector3(0, 5, -10); // Set your initial camera position
     const initialCameraTarget = BABYLON.Vector3.Zero(); // Set your initial camera target
@@ -206,6 +215,10 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                     // Wait for meshes to be fully loaded
                     await new Promise(resolve => setTimeout(resolve, 1000));
 
+                    // Show CCTV widget after model loads
+                    setIsCCTVVisible(true);
+                    setSelectedBuildingId(null);
+
                     // Calculate model bounds first
                     const { center, size } = calculateModelBounds(newLoadedMeshes);
                     
@@ -289,7 +302,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                                     );
 
                                     overlayDiv.style.left = `${screenPosition.x}px`;
-                                    overlayDiv.style.top = `${screenPosition.y - 70}px`;
+                                    overlayDiv.style.top = `${screenPosition.y - 120}px`;
                                 }
                             });
 
@@ -368,24 +381,129 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             }
         }
     };
-
     const handleMeshClick = (mesh: BABYLON.AbstractMesh) => {
-        const properties = getMeshProperties(mesh);
-        setSelectedProperties(properties);
-        setSelectedMesh(mesh);
-        setPanelVisible(false);  // change to true
-        setSelectedBuildingId(mesh.metadata?.buildingLabel || null);
-
-        // Remove random color change code and keep only the highlight effect
-        const originalMaterial = mesh.material;
-        const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
-        highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
-        mesh.material = highlightMaterial;
-
-        setTimeout(() => {
-            mesh.material = originalMaterial;
-        }, 1000);
+        try {
+            if (!mesh || !scene) {
+                console.warn('Invalid mesh or scene');
+                return;
+            }
+            
+            // Get and set properties
+            const properties = getMeshProperties(mesh);
+            setSelectedProperties(properties);
+            setSelectedMesh(mesh);
+            setPanelVisible(false); // for prop
+            
+            // Set building ID and related state
+            const buildingLabel = mesh.metadata?.buildingLabel || null;
+            setSelectedBuildingId(buildingLabel);
+            
+            // Set mesh graph data
+            if (buildingLabel) {
+                setMeshGraphData({
+                    title: buildingLabel,
+                    value: Math.floor(Math.random() * 1000),
+                    subtitle: `Data for ${mesh.name}`
+                });
+                setShowMeshGraph(true);
+                setIsCCTVVisible(false);
+            } else {
+                setShowMeshGraph(false);
+                setIsCCTVVisible(true);
+            }
+            
+            // Store the original material
+            const originalMaterial = mesh.material;
+            
+            // Create and apply highlight material
+            const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
+            highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1); // Bright blue
+            
+            // Apply highlight material
+            mesh.material = highlightMaterial;
+            
+            // Set a timeout to revert to original material after 2 seconds (increased for visibility)
+            setTimeout(() => {
+                if (mesh && !mesh.isDisposed()) {
+                    mesh.material = originalMaterial;
+                    console.log("Material reverted to original");
+                }
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Error in handleMeshClick:', error);
+        }
     };
+
+    //     const properties = getMeshProperties(mesh);
+    //     setSelectedProperties(properties);
+    //     setSelectedMesh(mesh);
+    //     setPanelVisible(false);  // change to true
+    //     setSelectedBuildingId(mesh.metadata?.buildingLabel || null);
+
+    //     // Remove random color change code and keep only the highlight effect
+    //     const originalMaterial = mesh.material;
+    //     const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
+    //     highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
+    //     mesh.material = highlightMaterial;
+
+    //     try {
+    //         if (!mesh || !scene) {
+    //             console.warn('Invalid mesh or scene');
+    //             return;
+    //         }
+
+    //         const properties = getMeshProperties(mesh);
+    //         setSelectedProperties(properties);
+    //         setSelectedMesh(mesh);
+    //         setPanelVisible(false);
+
+    //         // Set mesh graph data
+    //         if (mesh.metadata?.buildingLabel) {
+    //         setMeshGraphData({
+    //             title: mesh.metadata.buildingLabel,
+    //             value: Math.floor(Math.random() * 1000), // Example random value
+    //             subtitle: `Data for ${mesh.name}`
+    //         });
+    //         setShowMeshGraph(true);}else {
+    //             setSelectedBuildingId(null);
+    //             setShowMeshGraph(false);
+    //         }
+
+    //         // Check if the mesh has a building label
+    //         if (mesh.metadata?.buildingLabel) {
+    //             setSelectedBuildingId(mesh.metadata.buildingLabel);
+    //             setIsCCTVVisible(false);
+    //         } else {
+    //             setSelectedBuildingId(null);
+    //             setIsCCTVVisible(true);
+    //         }
+
+    //         // Highlight effect - with safety checks
+    //         if (mesh.material) {
+    //             const originalMaterial = mesh.material;
+    //             try {
+    //                 const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
+    //                 highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
+    //                 mesh.material = highlightMaterial;
+
+    //                 setTimeout(() => {
+    //                     if (mesh && mesh.isDisposed && !mesh.isDisposed()) {
+    //                         mesh.material = originalMaterial;
+    //                     }
+    //                 }, 1000);
+    //             } catch (materialError) {
+    //                 console.error('Error applying highlight material:', materialError);
+    //                 // Restore original material if highlight fails
+    //                 if (mesh && mesh.isDisposed && !mesh.isDisposed()) {
+    //                     mesh.material = originalMaterial;
+    //                 }
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Error in handleMeshClick:', error);
+    //     }
+    // };
 
     // Add this function to handle double click
     const handleDoubleClick = async (mesh: BABYLON.AbstractMesh) => {
@@ -702,6 +820,27 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
 
     return (
         <WidgetWrapper>
+            {showMeshGraph && (
+                <div className="mesh-graph-container" style={{
+                    position: 'absolute',
+                    left: '20px',
+                    top: '20px',
+                    zIndex: 1000,
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    padding: '20px',
+                    width: '300px'
+                }}>
+                    <MeshGraph
+                        title={meshGraphData.title}
+                        value={meshGraphData.value}
+                        subtitle={meshGraphData.subtitle}
+                        onClose={() => setShowMeshGraph(false)}
+                    />
+                </div>
+            )}
+            {isCCTVVisible && <CCTVWidget />}
             <div className="canvas-container">
                 <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
             </div>
@@ -768,11 +907,11 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             />
             <BuildingWidgets selectedBuilding={selectedBuildingId} />
             <BuildingGraphs buildingId={selectedBuildingId} />
-            <NavigationWidget 
+            {/* <NavigationWidget 
                 onItemClick={handleNavigationClick}
-                selectedItem={selectedNavItem}
+                selectedItem={selectedNavItem}          //example
                 selectedBuilding={selectedBuildingId}
-            />
+            /> */}
             <MeshList 
                 meshes={loadedMeshes}
                 currentCamera={currentCamera}

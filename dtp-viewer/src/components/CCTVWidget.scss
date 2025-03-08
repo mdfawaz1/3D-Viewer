@@ -1,0 +1,378 @@
+.cctv-widget {
+    position: fixed;
+    left: 5px;
+    top: 60px;
+    width: 380px;
+    background: linear-gradient(
+        to right,
+        rgba(33, 33, 33, 0.95) 0%,
+        rgba(33, 33, 33, 0.75) 30%,
+        rgba(236, 236, 238, 0) 70%
+    );
+
+    padding: 20px;
+    // box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    border: #fff;
+
+    color: #fff;
+
+    // Left border line
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.8),
+            rgba(247, 247, 249, 0.3)
+        );
+    }
+
+    // Right border line
+    &::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.8),
+            rgba(247, 247, 249, 0.3)
+        );
+        z-index: 2;
+    }
+
+    // Top and bottom borders
+    .border-top,
+    .border-bottom {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.8),
+            rgba(247, 247, 249, 0.3)
+        );
+        z-index: 2;
+    }
+
+    .border-top {
+        top: 0;
+    }
+
+    .border-bottom {
+        bottom: 0;
+    }
+
+    // // Gradient overlay (renamed from ::after to a class)
+    // .gradient-overlay {
+    //     content: '';
+    //     position: absolute;
+    //     top: 0;
+    //     left: 0;
+    //     right: 0;
+    //     bottom: 0;
+    //     background: linear-gradient(
+    //         to right,
+    //         rgba(108, 92, 231, 0.1) 70%,
+    //         rgba(108, 92, 231, 0.02) 40%,
+    //         transparent 100%
+    //     );
+    //     border: #fff;
+    //     pointer-events: none;
+    //     border-radius: 12px;
+    // }
+
+    // Subtle glow (renamed from ::after to a class)
+    // .left-glow {
+    //     content: '';
+    //     position: absolute;
+    //     top: 0;
+    //     left: 0;
+    //     width: 2px;
+    //     height: 100%;
+    //     background: linear-gradient(
+    //         to right,
+    //         rgba(108, 92, 231, 0.5),
+    //         transparent
+    //     );
+    //     filter: blur(3px);
+    //     pointer-events: none;
+    // }
+
+    .cctv-header {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(108, 92, 231, 0.3);
+
+        .cctv-title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            
+            .camera-icon {
+                margin-right: 10px;
+                background: linear-gradient(135deg, #6c5ce7, #a594f9);
+                padding: 5px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+            }
+        }
+
+        .team-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.02) 50%,
+                transparent 100%
+            );
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(108, 92, 231, 0.3);
+
+            .toggle-switch {
+                width: 44px;
+                height: 22px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(108, 92, 231, 0.4),
+                    rgba(108, 92, 231, 0.2)
+                );
+                border: 1px solid #6c5ce7;
+                border-radius: 20px;
+                position: relative;
+                cursor: pointer;
+                transition: all 0.3s ease;
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    right: 2px;
+                    top: 2px;
+                    width: 16px;
+                    height: 16px;
+                    background: #6c5ce7;
+                    border-radius: 50%;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
+                }
+
+                &:hover {
+                    background: linear-gradient(
+                        135deg,
+                        rgba(108, 92, 231, 0.5),
+                        rgba(108, 92, 231, 0.3)
+                    );
+                    &::after {
+                        box-shadow: 0 0 15px rgba(108, 92, 231, 0.7);
+                    }
+                }
+            }
+        }
+    }
+
+    .search-container {
+        margin-bottom: 20px;
+        position: relative;
+
+        &::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.5;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 12px 12px 35px;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.02) 50%,
+                transparent 100%
+            );
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #fff;
+            transition: all 0.3s ease;
+
+            &::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+            }
+
+            &:focus {
+                outline: none;
+                background: linear-gradient(
+                    to right,
+                    rgba(255, 255, 255, 0.1) 0%,
+                    rgba(255, 255, 255, 0.03) 50%,
+                    transparent 100%
+                );
+                box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.1);
+                border-color: rgba(108, 92, 231, 0.5);
+            }
+        }
+    }
+
+    .camera-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 5px;
+        padding-left: 10px;
+
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            // background: rgba(108, 92, 231, 0.5);
+            border-radius: 10px;
+            
+            &:hover {
+                background: rgba(108, 92, 231, 0.7);
+            }
+        }
+
+        .camera-item {
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 255, 255, 0.02) 50%,
+                transparent 100%
+            );
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(108, 92, 231, 0.15);
+
+            &:hover {
+                transform: translateY(-2px);
+                border-color: rgba(108, 92, 231, 0.4);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                background: linear-gradient(
+                    to right,
+                    rgba(108, 92, 231, 0.15) 0%,
+                    rgba(108, 92, 231, 0.05) 50%,
+                    transparent 100%
+                );
+
+                .camera-thumbnail .expand-icon {
+                    opacity: 1;
+                    transform: translate(-5px, 5px);
+                }
+            }
+
+            .camera-thumbnail {
+                position: relative;
+                aspect-ratio: 16/9;
+                border-bottom: 1px solid rgba(108, 92, 231, 0.2);
+                
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: linear-gradient(0deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 50%);
+                }
+
+                .expand-icon {
+                    position: absolute;
+                    right: 10px;
+                    top: 10px;
+                    background: rgba(108, 92, 231, 0.9);
+                    color: white;
+                    padding: 6px 8px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    opacity: 0;
+                    transform: translate(0, 0);
+                    transition: all 0.3s ease;
+                    z-index: 2;
+                    font-size: 12px;
+                    backdrop-filter: blur(4px);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+
+                    &:hover {
+                        background: rgba(108, 92, 231, 1);
+                        transform: translate(-5px, 5px) scale(1.05);
+                    }
+                }
+            }
+
+            .camera-info {
+                padding: 12px;
+                background: linear-gradient(
+                    to right,
+                    rgba(0, 0, 0, 0.3),
+                    transparent
+                );
+
+                .camera-name {
+                    font-size: 13px;
+                    font-weight: 500;
+                    margin-bottom: 4px;
+                    color: rgba(255, 255, 255, 0.9);
+                    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                }
+
+                .camera-id {
+                    font-size: 11px;
+                    color: rgba(255, 255, 255, 0.5);
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    border-bottom: 1px solid rgba(108, 92, 231, 0.2);
+                    padding-bottom: 4px;
+
+                    &::before {
+                        content: '•';
+                        color: #6c5ce7;
+                        font-size: 14px;
+                    }
+                }
+            }
+        }
+    }
+} 

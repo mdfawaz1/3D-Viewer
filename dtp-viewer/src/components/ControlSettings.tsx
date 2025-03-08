@@ -38,6 +38,7 @@ const ControlSettings: React.FC<ControlSettingsProps> = ({
     const [isAutoRotating, setIsAutoRotating] = useState(false);
     const [autoRotateSpeed, setAutoRotateSpeed] = useState(1);
     const [autoRotateInterval, setAutoRotateInterval] = useState<NodeJS.Timeout | null>(null);
+    const [isWireframe, setIsWireframe] = useState(false);
 
     const calculateModelBounds = (meshes: BABYLON.AbstractMesh[]) => {
         let min = new BABYLON.Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
@@ -377,6 +378,49 @@ const ControlSettings: React.FC<ControlSettingsProps> = ({
         refocusCanvas();
     };
 
+    const toggleWireframe = () => {
+        if (!scene) return;
+        
+        loadedMeshes.forEach(mesh => {
+            if (!mesh.material) {
+                mesh.material = new BABYLON.StandardMaterial("wireframeMaterial", scene);
+            }
+
+            const material = mesh.material;
+
+            // Handle both Standard and PBR materials
+            if (material instanceof BABYLON.StandardMaterial || material instanceof BABYLON.PBRMaterial) {
+                if (!isWireframe) {
+                    // Store original material
+                    const originalMaterial = material;
+
+                    // Create a new wireframe material
+                    const wireframeMaterial = new BABYLON.StandardMaterial("wireframe_" + mesh.name, scene);
+                    wireframeMaterial.wireframe = true;
+                    wireframeMaterial.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3); 
+                    wireframeMaterial.alpha = 1;
+                    wireframeMaterial.backFaceCulling = false;
+
+                    // Store reference to original material
+                    wireframeMaterial.metadata = {
+                        originalMaterial: originalMaterial
+                    };
+
+                    // Apply wireframe material
+                    mesh.material = wireframeMaterial;
+                } else {
+                    // Restore original material
+                    if (material.metadata?.originalMaterial) {
+                        mesh.material = material.metadata.originalMaterial;
+                    }
+                }
+            }
+        });
+        
+        setIsWireframe(!isWireframe);
+        refocusCanvas();
+    };
+
     const renderCameraLimitsControls = () => (
         <div className="camera-limits-controls">
             <div className="limits-header" onClick={() => setShowCameraLimits(!showCameraLimits)}>
@@ -624,6 +668,17 @@ const ControlSettings: React.FC<ControlSettingsProps> = ({
                             e.preventDefault();
                             handleInitiateFPP();
                         }}>Initiate FPP</button>
+                    </div>
+                    <div className="button-controls">
+                        <button 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                toggleWireframe();
+                            }}
+                            className={isWireframe ? 'active' : ''}
+                        >
+                            {isWireframe ? 'Disable' : 'Enable'} Wireframe
+                        </button>
                     </div>
                     <div className="button-controls movement-controls">
                         <button 

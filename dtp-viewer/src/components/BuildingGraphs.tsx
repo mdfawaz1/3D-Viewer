@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     AreaChart,
     Area,
@@ -105,8 +105,42 @@ const generateBuildingData = (buildingId: string) => {
     });
 };
 
+// Add Modal interface
+interface ModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    children: React.ReactNode;
+    title: string;
+}
+
+// Add Modal component
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="graph-modal-overlay" onClick={onClose}>
+            <div className="graph-modal-content" onClick={e => e.stopPropagation()}>
+                <div className="graph-modal-header">
+                    <h2>{title}</h2>
+                    <button className="modal-close-btn" onClick={onClose}>×</button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
 const BuildingGraphs: React.FC<BuildingGraphsProps> = ({ buildingId }) => {
     const [data, setData] = React.useState<any[]>([]);
+    const [modalContent, setModalContent] = useState<{
+        isOpen: boolean;
+        content: JSX.Element | null;
+        title: string;
+    }>({
+        isOpen: false,
+        content: null,
+        title: ''
+    });
 
     React.useEffect(() => {
         console.log('BuildingId changed:', buildingId); // Debug log
@@ -143,10 +177,72 @@ const BuildingGraphs: React.FC<BuildingGraphsProps> = ({ buildingId }) => {
         return null;
     };
 
+    const openModal = (content: JSX.Element, title: string) => {
+        setModalContent({
+            isOpen: true,
+            content,
+            title
+        });
+    };
+
+    const closeModal = () => {
+        setModalContent({
+            isOpen: false,
+            content: null,
+            title: ''
+        });
+    };
+
     return (
         <div className="building-graphs">
             <div className="graph-card bar-chart">
-                <h3>Energy Distribution by System</h3>
+                <div className="graph-header">
+                    <h3>Energy Distribution by System</h3>
+                    <button className="expand-button" onClick={() => openModal(
+                        <ResponsiveContainer width="100%" height={500}>
+                            <BarChart data={data}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="time" stroke={COLORS.white} />
+                                <YAxis stroke={COLORS.white} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend />
+                                <Bar 
+                                    dataKey="hvac" 
+                                    name="HVAC" 
+                                    fill={COLORS.primary} 
+                                    stackId="a" 
+                                />
+                                <Bar 
+                                    dataKey="lighting" 
+                                    name="Lighting" 
+                                    fill={COLORS.success} 
+                                    stackId="a" 
+                                />
+                                <Bar 
+                                    dataKey="equipment" 
+                                    name="Equipment" 
+                                    fill={COLORS.warning} 
+                                    stackId="a" 
+                                />
+                                <Bar 
+                                    dataKey="security" 
+                                    name="Security" 
+                                    fill={COLORS.danger} 
+                                    stackId="a" 
+                                />
+                                <Bar 
+                                    dataKey="network" 
+                                    name="Network" 
+                                    fill={COLORS.purple} 
+                                    stackId="a" 
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>,
+                        "Energy Distribution by System"
+                    )}>
+                        <span>⤢</span>
+                    </button>
+                </div>
                 <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -189,7 +285,61 @@ const BuildingGraphs: React.FC<BuildingGraphsProps> = ({ buildingId }) => {
             </div>
 
             <div className="graph-card area-chart">
-                <h3>Building Activity Overview</h3>
+                <div className="graph-header">
+                    <h3>Building Activity Overview</h3>
+                    <button className="expand-button" onClick={() => openModal(
+                        <ResponsiveContainer width="100%" height={500}>
+                            <AreaChart data={data}>
+                                <defs>
+                                    <linearGradient id="colorPower" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorOccupancy" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor={COLORS.success} stopOpacity={0.1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={COLORS.warning} stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor={COLORS.warning} stopOpacity={0.1}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="time" stroke={COLORS.white} />
+                                <YAxis stroke={COLORS.white} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend />
+                                <Area
+                                    type="monotone"
+                                    dataKey="powerUsage"
+                                    name="Power Usage"
+                                    stroke={COLORS.primary}
+                                    fill="url(#colorPower)"
+                                    strokeWidth={2}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="occupancy"
+                                    name="Occupancy"
+                                    stroke={COLORS.success}
+                                    fill="url(#colorOccupancy)"
+                                    strokeWidth={2}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="temperature"
+                                    name="Temperature"
+                                    stroke={COLORS.warning}
+                                    fill="url(#colorTemp)"
+                                    strokeWidth={2}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>,
+                        "Building Activity Overview"
+                    )}>
+                        <span>⤢</span>
+                    </button>
+                </div>
                 <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={data}>
                         <defs>
@@ -240,7 +390,47 @@ const BuildingGraphs: React.FC<BuildingGraphsProps> = ({ buildingId }) => {
             </div>
 
             <div className="graph-card line-chart">
-                <h3>Real-Time Metrics</h3>
+                <div className="graph-header">
+                    <h3>Real-Time Metrics</h3>
+                    <button className="expand-button" onClick={() => openModal(
+                        <div>
+                            <div className="stats-container">
+                                <div className="stat-item">
+                                    <span className="stat-value" style={{ color: COLORS.primary }}>
+                                        {Math.round(data[0]?.powerUsage / 100)}k
+                                    </span>
+                                    <span className="stat-label">Power (kW)</span>
+                                </div>
+                                <div className="stat-item">
+                                    <span className="stat-value" style={{ color: COLORS.success }}>
+                                        {data[0]?.occupancy}
+                                    </span>
+                                    <span className="stat-label">Occupants</span>
+                                </div>
+                                <div className="stat-item">
+                                    <span className="stat-value" style={{ color: COLORS.warning }}>
+                                        {data[0]?.temperature}°
+                                    </span>
+                                    <span className="stat-label">Temperature</span>
+                                </div>
+                            </div>
+                            <ResponsiveContainer width="100%" height={400}>
+                                <LineChart data={data}>
+                                    <Line
+                                        type="monotone"
+                                        dataKey="powerUsage"
+                                        stroke={COLORS.primary}
+                                        strokeWidth={2}
+                                        dot={false}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>,
+                        "Real-Time Metrics"
+                    )}>
+                        <span>⤢</span>
+                    </button>
+                </div>
                 <div className="stats-container">
                     <div className="stat-item">
                         <span className="stat-value" style={{ color: COLORS.primary }}>
@@ -273,6 +463,14 @@ const BuildingGraphs: React.FC<BuildingGraphsProps> = ({ buildingId }) => {
                     </LineChart>
                 </ResponsiveContainer>
             </div>
+
+            <Modal 
+                isOpen={modalContent.isOpen}
+                onClose={closeModal}
+                title={modalContent.title}
+            >
+                {modalContent.content}
+            </Modal>
         </div>
     );
 };

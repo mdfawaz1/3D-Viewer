@@ -1,27 +1,40 @@
 import * as React from 'react';
 import './BottomNavbar.scss';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faHome,
+  faShield,
+  faBell,
+  faFire
+} from '@fortawesome/free-solid-svg-icons';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 interface NavItem {
   label: string;
   items: string[];
+  icon: IconDefinition;
 }
 
 const navItems: NavItem[] = [
   {
-    label: 'Security',
-    items: ['Cameras', 'Access Control', 'Surveillance', 'Guards']
+    label: 'Home',
+    items: ['Lighting', 'HVAC', 'Energy', 'Maintenance'],
+    icon: faHome
   },
   {
-    label: 'Home',
-    items: ['Lighting', 'HVAC', 'Energy', 'Maintenance']
+    label: 'Security',
+    items: ['Cameras', 'Access Control', 'Surveillance', 'Guards'],
+    icon: faShield
   },
   {
     label: 'Alarms',
-    items: ['Emergency', 'Intrusion', 'Technical', 'System Status']
+    items: ['Emergency', 'Intrusion', 'Technical', 'System Status'],
+    icon: faBell
   },
   {
     label: 'Fire',
-    items: ['Detectors', 'Sprinklers', 'Evacuation', 'Fire Exits']
+    items: ['Detectors', 'Sprinklers', 'Evacuation', 'Fire Exits'],
+    icon: faFire
   }
 ];
 
@@ -51,7 +64,12 @@ const BottomNavbar: React.FC = () => {
           onMouseEnter={() => handleMouseEnter(item.label)}
           onMouseLeave={handleMouseLeave}
         >
-          <span className="nav-label">{item.label}</span>
+          <span className="nav-label">
+            <span className="nav-icon">
+              <FontAwesomeIcon icon={item.icon} size="lg" />
+            </span>
+            {item.label}
+          </span>
           {activeDropdown === item.label && (
             <div 
               className="dropdown-menu"
