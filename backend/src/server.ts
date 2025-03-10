@@ -204,10 +204,6 @@ app.get('/api/debug/files', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
-
 // MongoDB Model Schema
 const ModelMetadataSchema = new mongoose.Schema({
     name: String,
@@ -216,4 +212,119 @@ const ModelMetadataSchema = new mongoose.Schema({
     lastModified: Number
 });
 
-const ModelMetadata = mongoose.model('ModelMetadata', ModelMetadataSchema); 
+const ModelMetadata = mongoose.model('ModelMetadata', ModelMetadataSchema);
+
+// Default mesh configurations
+const defaultConfigurations = [
+    {
+        meshName: 'G-__559191_G-__559191_Material',
+        capsuleColor: '#10B981',
+        glowColor: '#00FF00',
+        buildingLabel: 'Building',
+        category: 'fire-safety'
+    },
+    {
+        meshName: 'G-__564663_G-__564663_Material',
+        capsuleColor: '#EF4444',
+        glowColor: '#FF0000',
+        buildingLabel: 'Factory',
+        category: 'acmv'
+    },
+    {
+        meshName: 'G-__562197_G-__562197_Material',
+        capsuleColor: '#F97316',
+        glowColor: '#FFA500',
+        buildingLabel: 'Warehouse',
+        category: 'operations'
+    },
+    {
+        meshName: 'New York_primitive131',
+        capsuleColor: '#F97316',
+        glowColor: '#FFA500',
+        buildingLabel: 'Warehouse',
+        category: 'operations'
+    },
+    {
+        meshName: 'node9654',
+        capsuleColor: '#F97316',
+        glowColor: '#FFA500',
+        buildingLabel: 'Warehouse',
+        category: 'operations'
+    },
+    {
+        meshName: 'node6437',
+        capsuleColor: '#10B981',
+        glowColor: '#00FF00',
+        buildingLabel: 'Warehouse',
+        category: 'operations'
+    },
+    {
+        meshName: "building1",
+        buildingLabel: "Building 1",
+        capsuleColor: "#00C4FF",
+        glowColor: "#00C4FF",
+        category: "fire-safety"
+    },
+    {
+        meshName: "LOD3_055",
+        buildingLabel: "Building 2",
+        capsuleColor: "#FF4400",
+        glowColor: "#FF4400",
+        category: "acmv"
+    }
+];
+
+// MeshConfig Schema
+const MeshConfigSchema = new mongoose.Schema({
+    meshName: { type: String, required: true, unique: true },
+    capsuleColor: { type: String, required: true },
+    glowColor: { type: String, required: true },
+    buildingLabel: { type: String, required: true },
+    category: { type: String, required: true }
+});
+
+const MeshConfig = mongoose.model('MeshConfig', MeshConfigSchema);
+
+// Get all mesh configurations
+app.get('/api/mesh-configs', async (req, res) => {
+    try {
+        const configs = await MeshConfig.find();
+        res.json(configs);
+    } catch (error) {
+        console.error('Error fetching mesh configs:', error);
+        res.status(500).json({ error: 'Error fetching mesh configurations' });
+    }
+});
+
+// Update or create mesh configuration
+app.post('/api/mesh-configs', async (req, res) => {
+    try {
+        const config = req.body;
+        const updatedConfig = await MeshConfig.findOneAndUpdate(
+            { meshName: config.meshName },
+            config,
+            { new: true, upsert: true }
+        );
+        res.json(updatedConfig);
+    } catch (error) {
+        console.error('Error updating mesh config:', error);
+        res.status(500).json({ error: 'Error updating mesh configuration' });
+    }
+});
+
+// Reset to default configurations
+app.post('/api/mesh-configs/reset', async (req, res) => {
+    try {
+        await MeshConfig.deleteMany({});
+        await MeshConfig.insertMany(defaultConfigurations);
+        const configs = await MeshConfig.find();
+        res.json(configs);
+    } catch (error) {
+        console.error('Error resetting mesh configs:', error);
+        res.status(500).json({ error: 'Error resetting mesh configurations' });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+}); 

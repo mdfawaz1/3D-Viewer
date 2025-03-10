@@ -102,7 +102,7 @@ const BuildingWidgets: React.FC<BuildingWidgetsProps> = ({ selectedBuilding }) =
     return (
         <>
             {/* Energy Use Widget - Positioned at top center */}
-            <div className={`energy-widget-container ${selectedBuilding ? 'visible' : ''}`}>
+            {/* <div className={`energy-widget-container ${selectedBuilding ? 'visible' : ''}`}>
                 <div className="widget energy-widget">
                     <div className="header">
 
@@ -135,7 +135,7 @@ const BuildingWidgets: React.FC<BuildingWidgetsProps> = ({ selectedBuilding }) =
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Other Widgets - Positioned on the left */}
             <div className={`building-widgets ${selectedBuilding ? 'visible' : ''}`}>

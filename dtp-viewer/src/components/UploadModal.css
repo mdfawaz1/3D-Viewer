@@ -1,0 +1,121 @@
+.model-preview {
+    position: relative;
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.model-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.model-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.model-info {
+    padding: 12px;
+    cursor: pointer;
+}
+
+.delete-button {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ff4444;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    z-index: 10;
+}
+
+.delete-button:hover {
+    background: #ff4444;
+    transform: scale(1.1);
+}
+
+.delete-button:hover svg {
+    color: white;
+}
+
+.model-card:hover .delete-button {
+    opacity: 1;
+}
+
+.delete-button svg {
+    color: #ff4444;
+    transition: color 0.2s ease-in-out;
+}
+
+.model-name {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.model-date {
+    display: block;
+    font-size: 12px;
+    color: #666;
+} 
+.model-preview {
+    position: relative;
+}
+
+.model-card {
+    position: relative;
+}
+
+.delete-button {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255, 0, 0, 0.8);
+    border: none;
+    border-radius: 4px;
+    width: auto;
+    height: 32px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    color: white;
+}
+
+.delete-button:hover {
+    background: rgba(255, 0, 0, 1);
+    transform: scale(1.05);
+}
+
+.model-card:hover .delete-button {
+    opacity: 1;
+}
+
+.delete-button svg {
+    color: white;
+}
+
+.delete-button::after {
+    content: "Delete";
+    font-size: 12px;
+    font-weight: 500;
+}

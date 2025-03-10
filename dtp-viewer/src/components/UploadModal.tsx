@@ -2,13 +2,14 @@ import * as React from "react";
 import { Modal } from "uxp/components";
 import { fileSystemService, StoredModel } from '../services/FileSystemService';
 import { ModelIcon } from './ModelIcon';
-
+import './UploadModal.css';
 interface UploadModalProps {
     isOpen: boolean;
     onClose: () => void;
     onFileSelect: (file: File) => void;
     loadedModels: StoredModel[];
     onModelSelect: (modelData: StoredModel) => void;
+    onModelDelete?: (modelId: string) => void;
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ 
@@ -16,7 +17,8 @@ const UploadModal: React.FC<UploadModalProps> = ({
     onClose, 
     onFileSelect,
     loadedModels,
-    onModelSelect 
+    onModelSelect,
+    onModelDelete 
 }) => {
     const [isDragging, setIsDragging] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -74,6 +76,42 @@ const UploadModal: React.FC<UploadModalProps> = ({
         fileInputRef.current?.click();
     };
 
+    const handleDeleteModel = async (e: React.MouseEvent, model: StoredModel) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Full model data:', model);
+        
+        // Get the ID from either id or _id field
+        const modelId = model.id || model._id;
+        
+        if (!modelId) {
+            console.error('Invalid model data:', model);
+            return;
+        }
+        
+        if (window.confirm(`Are you sure you want to delete "${model.name}"?`)) {
+            try {
+                console.log('Calling deleteModel with ID:', modelId);
+                const success = await fileSystemService.deleteModel(modelId);
+                console.log('Delete operation result:', success);
+                
+                if (success) {
+                    if (onModelDelete) {
+                        onModelDelete(modelId);
+                    }
+                    console.log('Model deleted successfully');
+                } else {
+                    console.error('Failed to delete model');
+                    alert('Failed to delete the model. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error deleting model:', error);
+                alert('Failed to delete the model. Please try again.');
+            }
+        }
+    };
+
     return (
         <Modal
             show={isOpen}
@@ -86,23 +124,40 @@ const UploadModal: React.FC<UploadModalProps> = ({
                     <div className="models-list">
                         <h3>My Models</h3>
                         <div className="models-grid">
-                            {loadedModels.map((model) => (
-                                <div 
-                                    key={model.id} 
-                                    className="model-card"
-                                    onClick={() => onModelSelect(model)}
-                                >
-                                    <div className="model-preview">
-                                        <img src={model.preview} alt={model.name} />
+                            {loadedModels.map((model) => {
+                                const modelId = model.id || model._id;
+                                console.log('Rendering model:', model);
+                                return (
+                                    <div 
+                                        key={modelId} 
+                                        className="model-card"
+                                        onClick={() => onModelSelect(model)}
+                                    >
+                                        <button 
+                                            className="delete-button"
+                                            onClick={(e) => handleDeleteModel(e, model)}
+                                            type="button"
+                                            style={{ zIndex: 10 }}
+                                            title="Delete model"
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M3 6h18" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                        <div className="model-preview">
+                                            <img src={model.preview} alt={model.name} />
+                                        </div>
+                                        <div className="model-info">
+                                            <span className="model-name">{model.name}</span>
+                                            <span className="model-date">
+                                                {new Date(model.lastModified).toLocaleDateString()}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="model-info">
-                                        <span className="model-name">{model.name}</span>
-                                        <span className="model-date">
-                                            {new Date(model.lastModified).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -145,4 +200,5 @@ const UploadModal: React.FC<UploadModalProps> = ({
     );
 };
 
-export default UploadModal; 
+export default UploadModal;
+

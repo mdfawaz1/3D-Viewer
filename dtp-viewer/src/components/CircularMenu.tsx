@@ -21,7 +21,7 @@ const CircularMenu: React.FC<CircularMenuProps> = ({ isOpen, onToggle, position,
   
   const handleClick = (itemId: string, url?: string) => {
     if (url) {
-      window.open(url, '_blank');
+      window.location.href = url;
     } else {
       onItemClick(itemId);
     }
@@ -65,7 +65,7 @@ const CircularMenu: React.FC<CircularMenuProps> = ({ isOpen, onToggle, position,
           <FontAwesomeIcon icon={faCogs} />
         </a>
         <a href="#" className={`menu-item item-4 ${selectedItem === 'smart-bim' ? 'selected' : ''}`}
-           onClick={(e) => { e.preventDefault(); handleClick('smart-bim', 'https://demo.iviva.cloud/Apps/smartbim/home'); }}>
+           onClick={(e) => { e.preventDefault(); handleClick('smart-bim', 'https://b4.smartbim.ivivacloud.com/Apps/smartbim/home?view=Airport%20Gate%20D5'); }}>
           <FontAwesomeIcon icon={faCubes} />
         </a>
         <a href="#" className={`menu-item item-5 ${selectedItem === 'gui' ? 'selected' : ''}`}

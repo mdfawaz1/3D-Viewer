@@ -28,12 +28,27 @@
       background-color: rgba(255, 255, 255, 0.1);
     }
 
+    &.selected {
+      background-color: rgba(255, 255, 255, 0.15);
+
+      .nav-label {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .flow-arrow {
+        margin-left: 8px;
+        font-size: 12px;
+      }
+    }
+
     .nav-label {
       font-size: 14px;
       font-weight: 500;
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 120px;
 
       .nav-icon {
         display: flex;
@@ -70,6 +85,15 @@
         transition: background-color 0.2s ease;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .submenu-icon {
+          width: 16px;
+          height: 16px;
+          opacity: 0.8;
+        }
 
         &:last-child {
           border-bottom: none;

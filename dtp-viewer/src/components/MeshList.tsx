@@ -121,7 +121,7 @@ const MeshList: React.FC<MeshListProps> = ({ meshes, currentCamera, scene }) => 
     }, []);
 
     return (
-        <div className={`mesh-list ${!isExpanded ? 'collapsed' : ''}`}>
+        <div className={`mesh-lists ${!isExpanded ? 'collapsed' : ''}`}>
             <div className="mesh-list-header" onClick={toggleExpand}>
                 <h3>Asset list</h3>
                 <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>

@@ -11,7 +11,7 @@ import { fileSystemService, StoredModel } from './services/FileSystemService';
 import { ModelIcon } from './components/ModelIcon';
 import MeshCapsule from './components/MeshCapsule';
 import * as ReactDOM from 'react-dom';
-import { meshConfigurations } from './config/meshConfig';
+import { meshConfigurations, updateMeshConfiguration, MeshConfig } from './config/meshConfig';
 import BuildingWidgets from './components/BuildingWidgets';
 import NavigationWidget from './components/NavigationWidget';
 import MeshList from './components/MeshList';
@@ -21,6 +21,8 @@ import BottomNavbar from './components/BottomNavbar';
 import { CubeTexture } from 'babylonjs';
 import CCTVWidget from './components/CCTVWidget';
 import MeshGraph from './components/MeshGraph';
+import MeshConfigurationScreen from './components/MeshConfigurationScreen';
+import AssetOperationsCard from './components/AssetOperationsCard';
 
 interface IWidgetProps {
     uxpContext?: IContextProvider,
@@ -92,6 +94,17 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
         value: 0,
         subtitle: ''
     });
+    const [isMeshConfigOpen, setIsMeshConfigOpen] = React.useState(false);
+    const [showAssetCard, setShowAssetCard] = React.useState(false);
+    const [selectedAssetInfo, setSelectedAssetInfo] = React.useState({
+        assetCount: 0,
+        openTickets: 0,
+        criticalActions: 0,
+        description: '',
+        imageUrl: ''
+    });
+    const [cardPosition, setCardPosition] = React.useState({ x: 0, y: 0 });
+    const [isCloseButtonHovered, setIsCloseButtonHovered] = React.useState(false);
 
     const initialCameraPosition = new BABYLON.Vector3(0, 5, -10); // Set your initial camera position
     const initialCameraTarget = BABYLON.Vector3.Zero(); // Set your initial camera target
@@ -266,6 +279,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                         const meshConfig = meshConfigurations.find(config => config.meshName === mesh.name);
                         
                         if (meshConfig) {
+                            // Only apply configuration if it already exists in meshConfigurations
                             const overlayDiv = document.createElement('div');
                             overlayDiv.style.position = 'absolute';
                             overlayDiv.style.zIndex = '1';
@@ -277,7 +291,8 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                                 buildingNumber: index + 1,
                                 buildingLabel: meshConfig.buildingLabel,
                                 capsuleColor: meshConfig.capsuleColor,
-                                glowColor: meshConfig.glowColor
+                                glowColor: meshConfig.glowColor,
+                                config: meshConfig // Store the full config
                             };
 
                             const root = createRootHelper(overlayDiv);
@@ -321,8 +336,17 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                             ): void {
                                 result.set(glowColor.r, glowColor.g, glowColor.b, 1.0);
                             };
+                        } else {
+                            // For meshes without configuration, just store basic metadata without visual overlays
+                            mesh.metadata = {
+                                buildingNumber: index + 1,
+                                meshName: mesh.name
+                            };
                         }
                     });
+
+                    // Do NOT automatically show configuration screen
+                    // setIsMeshConfigOpen(true);
 
                 } catch (error) {
                     console.error("Error loading model:", error);
@@ -381,6 +405,29 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             }
         }
     };
+
+    // Update the updateCardPosition function
+    const updateCardPosition = React.useCallback((mesh: BABYLON.AbstractMesh) => {
+        if (mesh && scene && currentCamera && engine) {
+            const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+            const screenPosition = BABYLON.Vector3.Project(
+                meshPosition,
+                BABYLON.Matrix.Identity(),
+                scene.getTransformMatrix(),
+                currentCamera.viewport.toGlobal(
+                    engine.getRenderWidth(),
+                    engine.getRenderHeight()
+                )
+            );
+
+            // Reduced offset for smaller card
+            setCardPosition({
+                x: screenPosition.x,
+                y: screenPosition.y - 30 // Reduced offset
+            });
+        }
+    }, [scene, currentCamera, engine]);
+
     const handleMeshClick = (mesh: BABYLON.AbstractMesh) => {
         try {
             if (!mesh || !scene) {
@@ -392,14 +439,15 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             const properties = getMeshProperties(mesh);
             setSelectedProperties(properties);
             setSelectedMesh(mesh);
-            setPanelVisible(false); // for prop
+            setPanelVisible(false);
             
             // Set building ID and related state
             const buildingLabel = mesh.metadata?.buildingLabel || null;
             setSelectedBuildingId(buildingLabel);
             
-            // Set mesh graph data
+            // Only proceed with asset card and graph if there's a buildingLabel
             if (buildingLabel) {
+                // Set mesh graph data
                 setMeshGraphData({
                     title: buildingLabel,
                     value: Math.floor(Math.random() * 1000),
@@ -407,8 +455,30 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 });
                 setShowMeshGraph(true);
                 setIsCCTVVisible(false);
+
+                // Update card position
+                updateCardPosition(mesh);
+                
+                // Set asset card information with more detailed info
+                setSelectedAssetInfo({
+                    assetCount: 1,
+                    openTickets: Math.floor(Math.random() * 5) + 1,
+                    criticalActions: Math.floor(Math.random() * 3),
+                    description: `${buildingLabel} is a critical asset in the infrastructure. This building requires regular monitoring and maintenance. Location: ${mesh.position.toString()}`,
+                    imageUrl: './src/assets/build.jpg'
+                });
+                setShowAssetCard(true);
+
+                // Register position update in render loop
+                scene.registerBeforeRender(() => {
+                    if (showAssetCard) {
+                        updateCardPosition(mesh);
+                    }
+                });
             } else {
+                // If no buildingLabel, hide the card and graph
                 setShowMeshGraph(false);
+                setShowAssetCard(false);
                 setIsCCTVVisible(true);
             }
             
@@ -417,16 +487,14 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             
             // Create and apply highlight material
             const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
-            highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1); // Bright blue
+            highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
             
             // Apply highlight material
             mesh.material = highlightMaterial;
             
-            // Set a timeout to revert to original material after 2 seconds (increased for visibility)
             setTimeout(() => {
                 if (mesh && !mesh.isDisposed()) {
                     mesh.material = originalMaterial;
-                    console.log("Material reverted to original");
                 }
             }, 2000);
             
@@ -434,76 +502,6 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             console.error('Error in handleMeshClick:', error);
         }
     };
-
-    //     const properties = getMeshProperties(mesh);
-    //     setSelectedProperties(properties);
-    //     setSelectedMesh(mesh);
-    //     setPanelVisible(false);  // change to true
-    //     setSelectedBuildingId(mesh.metadata?.buildingLabel || null);
-
-    //     // Remove random color change code and keep only the highlight effect
-    //     const originalMaterial = mesh.material;
-    //     const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
-    //     highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
-    //     mesh.material = highlightMaterial;
-
-    //     try {
-    //         if (!mesh || !scene) {
-    //             console.warn('Invalid mesh or scene');
-    //             return;
-    //         }
-
-    //         const properties = getMeshProperties(mesh);
-    //         setSelectedProperties(properties);
-    //         setSelectedMesh(mesh);
-    //         setPanelVisible(false);
-
-    //         // Set mesh graph data
-    //         if (mesh.metadata?.buildingLabel) {
-    //         setMeshGraphData({
-    //             title: mesh.metadata.buildingLabel,
-    //             value: Math.floor(Math.random() * 1000), // Example random value
-    //             subtitle: `Data for ${mesh.name}`
-    //         });
-    //         setShowMeshGraph(true);}else {
-    //             setSelectedBuildingId(null);
-    //             setShowMeshGraph(false);
-    //         }
-
-    //         // Check if the mesh has a building label
-    //         if (mesh.metadata?.buildingLabel) {
-    //             setSelectedBuildingId(mesh.metadata.buildingLabel);
-    //             setIsCCTVVisible(false);
-    //         } else {
-    //             setSelectedBuildingId(null);
-    //             setIsCCTVVisible(true);
-    //         }
-
-    //         // Highlight effect - with safety checks
-    //         if (mesh.material) {
-    //             const originalMaterial = mesh.material;
-    //             try {
-    //                 const highlightMaterial = new BABYLON.StandardMaterial("highlightMat", scene);
-    //                 highlightMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 1);
-    //                 mesh.material = highlightMaterial;
-
-    //                 setTimeout(() => {
-    //                     if (mesh && mesh.isDisposed && !mesh.isDisposed()) {
-    //                         mesh.material = originalMaterial;
-    //                     }
-    //                 }, 1000);
-    //             } catch (materialError) {
-    //                 console.error('Error applying highlight material:', materialError);
-    //                 // Restore original material if highlight fails
-    //                 if (mesh && mesh.isDisposed && !mesh.isDisposed()) {
-    //                     mesh.material = originalMaterial;
-    //                 }
-    //             }
-    //         }
-    //     } catch (error) {
-    //         console.error('Error in handleMeshClick:', error);
-    //     }
-    // };
 
     // Add this function to handle double click
     const handleDoubleClick = async (mesh: BABYLON.AbstractMesh) => {
@@ -818,26 +816,159 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
         return null;
     };
 
+    // Add this function to handle mesh configuration updates
+    const handleMeshConfigUpdate = (meshName: string, config: MeshConfig) => {
+        if (scene && loadedMeshes) {
+            // Find the mesh by name
+            const mesh = loadedMeshes.find(m => m.name === meshName);
+            
+            if (mesh) {
+                // Create or update overlay div if it doesn't exist
+                const canvasContainer = canvasRef.current?.parentElement;
+                if (canvasContainer && !mesh.metadata?.overlayDiv) {
+                    const overlayDiv = document.createElement('div');
+                    overlayDiv.style.position = 'absolute';
+                    overlayDiv.style.zIndex = '1';
+                    canvasContainer.appendChild(overlayDiv);
+                    
+                    if (!mesh.metadata) {
+                        mesh.metadata = {};
+                    }
+                    
+                    mesh.metadata.overlayDiv = overlayDiv;
+                    mesh.metadata.buildingNumber = loadedMeshes.indexOf(mesh) + 1;
+                }
+                
+                // Update the mesh's visual properties
+                updateMeshColors(mesh, config.capsuleColor, config.glowColor);
+                
+                // Update the mesh's metadata
+                if (mesh.metadata) {
+                    mesh.metadata.buildingLabel = config.buildingLabel;
+                    mesh.metadata.capsuleColor = config.capsuleColor;
+                    mesh.metadata.glowColor = config.glowColor;
+                    mesh.metadata.config = config;
+                } else {
+                    mesh.metadata = {
+                        buildingLabel: config.buildingLabel,
+                        capsuleColor: config.capsuleColor,
+                        glowColor: config.glowColor,
+                        config
+                    };
+                }
+                
+                // Update the overlay if it exists
+                if (mesh.metadata?.overlayDiv) {
+                    const root = createRootHelper(mesh.metadata.overlayDiv);
+                    root.render(React.createElement(MeshCapsule, { 
+                        buildingNumber: mesh.metadata.buildingNumber || 1,
+                        color: config.capsuleColor,
+                        label: config.buildingLabel
+                    }));
+                    
+                    // Ensure position updates are registered
+                    if (currentCamera) {
+                        scene.registerBeforeRender(() => {
+                            if (mesh && mesh.metadata?.overlayDiv && currentCamera) {
+                                const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+                                const screenPosition = BABYLON.Vector3.Project(
+                                    meshPosition,
+                                    BABYLON.Matrix.Identity(),
+                                    scene.getTransformMatrix(),
+                                    currentCamera.viewport.toGlobal(
+                                        engine!.getRenderWidth(),
+                                        engine!.getRenderHeight()
+                                    )
+                                );
+
+                                mesh.metadata.overlayDiv.style.left = `${screenPosition.x}px`;
+                                mesh.metadata.overlayDiv.style.top = `${screenPosition.y - 120}px`;
+                            }
+                        });
+                    }
+                }
+                
+                // Update or create glow effect
+                let glowLayer = scene.getGlowLayerByName(`glow-${mesh.name}`);
+                
+                if (!glowLayer) {
+                    glowLayer = new BABYLON.GlowLayer(`glow-${mesh.name}`, scene);
+                    glowLayer.intensity = 0.2;
+                    glowLayer.addIncludedOnlyMesh(asMesh(mesh));
+                }
+                
+                // Convert hex color to BABYLON.Color3
+                const glowColor = BABYLON.Color3.FromHexString(config.glowColor);
+                glowLayer.customEmissiveColorSelector = function(
+                    mesh: BABYLON.Mesh, 
+                    subMesh: BABYLON.SubMesh, 
+                    material: BABYLON.Material, 
+                    result: BABYLON.Color4
+                ): void {
+                    result.set(glowColor.r, glowColor.g, glowColor.b, 1.0);
+                };
+            }
+        }
+    };
+
     return (
         <WidgetWrapper>
             {showMeshGraph && (
-                <div className="mesh-graph-container" style={{
-                    position: 'absolute',
-                    left: '20px',
-                    top: '20px',
-                    zIndex: 1000,
-                    backgroundColor: 'white',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    padding: '20px',
-                    width: '300px'
-                }}>
+                <div className="mesh-graph-container">
                     <MeshGraph
                         title={meshGraphData.title}
                         value={meshGraphData.value}
                         subtitle={meshGraphData.subtitle}
                         onClose={() => setShowMeshGraph(false)}
                     />
+                </div>
+            )}
+            {showAssetCard && (
+                <div 
+                    className="asset-card-container" 
+                    style={{
+                        position: 'absolute',
+                        left: `${cardPosition.x}px`,
+                        top: `${cardPosition.y}px`,
+                        transform: 'translate(-50%, -100%)',
+                        zIndex: 1000,
+                        pointerEvents: 'all'
+                    }}
+                >
+                    <AssetOperationsCard
+                        assetCount={selectedAssetInfo.assetCount}
+                        openTickets={selectedAssetInfo.openTickets}
+                        criticalActions={selectedAssetInfo.criticalActions}
+                        imageUrl={selectedAssetInfo.imageUrl}
+                        description={selectedAssetInfo.description}
+                    />
+                    <button 
+                        onClick={() => setShowAssetCard(false)}
+                        onMouseEnter={() => setIsCloseButtonHovered(true)}
+                        onMouseLeave={() => setIsCloseButtonHovered(false)}
+                        style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            background: isCloseButtonHovered ? '#4f46e5' : 'rgba(255, 255, 255, 0.9)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '18px',
+                            height: '18px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: isCloseButtonHovered ? 'white' : '#4f46e5',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            zIndex: 1001,
+                            transition: 'all 0.2s ease',
+                            transform: isCloseButtonHovered ? 'scale(1.1)' : 'scale(1)'
+                        }}
+                    >
+                        ×
+                    </button>
                 </div>
             )}
             {isCCTVVisible && <CCTVWidget />}
@@ -851,6 +982,28 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             >
                 <ModelIcon />
                  Models
+            </button>
+
+            <button 
+                className="config-button"
+                onClick={() => setIsMeshConfigOpen(true)}
+                style={{
+                    position: 'fixed',
+                    bottom: '100px',
+                    right: '20px',
+                    zIndex: 1000,
+                    padding: '8px 16px',
+                    backgroundColor: '#3B82F6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                }}
+            >
+                Configure Assets
             </button>
 
             <button 
@@ -881,6 +1034,14 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 onFileSelect={handleFileSelect}
                 loadedModels={loadedModelsList}
                 onModelSelect={handleModelSelect}
+            />
+
+            <MeshConfigurationScreen
+                isOpen={isMeshConfigOpen}
+                onClose={() => setIsMeshConfigOpen(false)}
+                meshes={loadedMeshes}
+                selectedMesh={selectedMesh}
+                onConfigUpdate={handleMeshConfigUpdate}
             />
 
             {isPanelVisible && (

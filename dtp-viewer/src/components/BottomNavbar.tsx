@@ -5,41 +5,87 @@ import {
   faHome,
   faShield,
   faBell,
-  faFire
+  faFire,
+  faLightbulb,
+  faTemperatureHalf,
+  faBolt,
+  faWrench,
+  faCamera,
+  faKey,
+  faVideo,
+  faUserSecret,
+  faExclamationTriangle,
+  faUserNinja,
+  faGears,
+  faCircleInfo,
+  faFireExtinguisher,
+  faDroplet,
+  faPersonRunning,
+  faDoorOpen,
+  faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 interface NavItem {
   label: string;
-  items: string[];
+  items: Array<{
+    label: string;
+    icon: IconDefinition;
+  }>;
   icon: IconDefinition;
+}
+
+interface SelectedItem {
+  main: string;
+  sub: string;
 }
 
 const navItems: NavItem[] = [
   {
     label: 'Home',
-    items: ['Lighting', 'HVAC', 'Energy', 'Maintenance'],
+    items: [
+      { label: 'Lighting', icon: faLightbulb },
+      { label: 'HVAC', icon: faTemperatureHalf },
+      { label: 'Energy', icon: faBolt },
+      { label: 'Maintenance', icon: faWrench }
+    ],
     icon: faHome
   },
   {
     label: 'Security',
-    items: ['Cameras', 'Access Control', 'Surveillance', 'Guards'],
+    items: [
+      { label: 'Cameras', icon: faCamera },
+      { label: 'Access Control', icon: faKey },
+      { label: 'Surveillance', icon: faVideo },
+      { label: 'Guards', icon: faUserSecret }
+    ],
     icon: faShield
   },
   {
     label: 'Alarms',
-    items: ['Emergency', 'Intrusion', 'Technical', 'System Status'],
+    items: [
+      { label: 'Emergency', icon: faExclamationTriangle },
+      { label: 'Intrusion', icon: faUserNinja },
+      { label: 'Technical', icon: faGears },
+      { label: 'System Status', icon: faCircleInfo }
+    ],
     icon: faBell
   },
   {
     label: 'Fire',
-    items: ['Detectors', 'Sprinklers', 'Evacuation', 'Fire Exits'],
+    items: [
+      { label: 'Detectors', icon: faFireExtinguisher },
+      { label: 'Sprinklers', icon: faDroplet },
+      { label: 'Evacuation', icon: faPersonRunning },
+      { label: 'Fire Exits', icon: faDoorOpen }
+    ],
     icon: faFire
   }
 ];
 
 const BottomNavbar: React.FC = () => {
   const [activeDropdown, setActiveDropdown] = React.useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = React.useState<SelectedItem | null>(null);
   const timeoutRef = React.useRef<NodeJS.Timeout>();
 
   const handleMouseEnter = (label: string) => {
@@ -52,7 +98,12 @@ const BottomNavbar: React.FC = () => {
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
-    }, 100); // Small delay before closing
+    }, 100);
+  };
+
+  const handleSubItemClick = (mainItem: string, subItem: string) => {
+    setSelectedItem({ main: mainItem, sub: subItem });
+    setActiveDropdown(null);
   };
 
   return (
@@ -60,7 +111,7 @@ const BottomNavbar: React.FC = () => {
       {navItems.map((item) => (
         <div 
           key={item.label} 
-          className="nav-item"
+          className={`nav-item ${selectedItem?.main === item.label ? 'selected' : ''}`}
           onMouseEnter={() => handleMouseEnter(item.label)}
           onMouseLeave={handleMouseLeave}
         >
@@ -68,7 +119,14 @@ const BottomNavbar: React.FC = () => {
             <span className="nav-icon">
               <FontAwesomeIcon icon={item.icon} size="lg" />
             </span>
-            {item.label}
+            {selectedItem?.main === item.label ? (
+              <>
+                {selectedItem.sub}
+                <FontAwesomeIcon icon={faChevronRight} className="flow-arrow" />
+              </>
+            ) : (
+              item.label
+            )}
           </span>
           {activeDropdown === item.label && (
             <div 
@@ -78,14 +136,12 @@ const BottomNavbar: React.FC = () => {
             >
               {item.items.map((subItem) => (
                 <div 
-                  key={subItem} 
+                  key={subItem.label} 
                   className="dropdown-item"
-                  onClick={() => {
-                    console.log(`Clicked: ${subItem}`);
-                    // Add your click handler here
-                  }}
+                  onClick={() => handleSubItemClick(item.label, subItem.label)}
                 >
-                  {subItem}
+                  <FontAwesomeIcon icon={subItem.icon} className="submenu-icon" />
+                  {subItem.label}
                 </div>
               ))}
             </div>

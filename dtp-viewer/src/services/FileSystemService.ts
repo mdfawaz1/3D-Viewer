@@ -1,6 +1,6 @@
-
 export interface StoredModel {
-    id: string;
+    id?: string;
+    _id?: string;
     name: string;
     preview: string;
     path: string;
@@ -49,7 +49,12 @@ class FileSystemService {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return await response.json();
+            const models = await response.json();
+            // Map MongoDB _id to id for consistency
+            return models.map((model: StoredModel) => ({
+                ...model,
+                id: model._id // Ensure id is always available
+            }));
         } catch (error) {
             console.error('Error loading models:', error);
             return [];
@@ -71,13 +76,35 @@ class FileSystemService {
     }
 
     async deleteModel(id: string): Promise<boolean> {
+        console.log('FileSystemService: Deleting model with ID:', id);
+        
+        if (!id) {
+            console.error('FileSystemService: No model ID provided for deletion');
+            return false;
+        }
+
         try {
-            const response = await fetch(`${this.API_URL}/models/${id}`, {
+            const url = `${this.API_URL}/models/${encodeURIComponent(id)}`;
+            console.log('FileSystemService: Sending DELETE request to:', url);
+
+            const response = await fetch(url, {
                 method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
-            return response.ok;
+
+            console.log('FileSystemService: Delete response status:', response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('FileSystemService: Error deleting model:', errorData);
+                return false;
+            }
+
+            return true;
         } catch (error) {
-            console.error('Error deleting model:', error);
+            console.error('FileSystemService: Error in deleteModel:', error);
             return false;
         }
     }
