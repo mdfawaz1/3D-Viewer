@@ -13,7 +13,7 @@ const port = 3000;
 mongoose.set('strictQuery', false);
 
 // MongoDB connection
-const mongoURI = 'mongodb://localhost:27017/3d-models';
+const mongoURI = 'mongodb://127.0.0.1:27017/3d-models';
 let gfs: Grid.Grid;
 let gridfsBucket: GridFSBucket;
 

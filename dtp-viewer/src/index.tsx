@@ -23,6 +23,8 @@ import CCTVWidget from './components/CCTVWidget';
 import MeshGraph from './components/MeshGraph';
 import MeshConfigurationScreen from './components/MeshConfigurationScreen';
 import AssetOperationsCard from './components/AssetOperationsCard';
+import AssetHealthStatus from './components/AssetHealthStatus';
+import MaintenanceCompliance from './components/MaintenanceCompliance';
 
 interface IWidgetProps {
     uxpContext?: IContextProvider,
@@ -453,26 +455,84 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                     value: Math.floor(Math.random() * 1000),
                     subtitle: `Data for ${mesh.name}`
                 });
-                setShowMeshGraph(true);
+                setShowMeshGraph(false); // Disable mesh graph
                 setIsCCTVVisible(false);
 
-                // Update card position
-                updateCardPosition(mesh);
-                
-                // Set asset card information with more detailed info
-                setSelectedAssetInfo({
+                // Create or get the asset card overlay div
+                let assetCardDiv = mesh.metadata?.assetCardDiv;
+                if (!assetCardDiv) {
+                    assetCardDiv = document.createElement('div');
+                    assetCardDiv.style.position = 'absolute';
+                    assetCardDiv.style.zIndex = '1000';
+                    canvasRef.current?.parentElement?.appendChild(assetCardDiv);
+                    
+                    if (!mesh.metadata) mesh.metadata = {};
+                    mesh.metadata.assetCardDiv = assetCardDiv;
+                }
+
+                // Update asset info
+                const assetInfo = {
                     assetCount: 1,
                     openTickets: Math.floor(Math.random() * 5) + 1,
                     criticalActions: Math.floor(Math.random() * 3),
-                    description: `${buildingLabel} is a critical asset in the infrastructure. This building requires regular monitoring and maintenance. Location: ${mesh.position.toString()}`,
+                    description: `${buildingLabel} is a critical asset in the infrastructure. This building requires regular monitoring and maintenance.`,
                     imageUrl: './src/assets/build.jpg'
-                });
-                setShowAssetCard(true);
+                };
 
-                // Register position update in render loop
+                // Render asset card using ReactDOM
+                const root = createRootHelper(assetCardDiv);
+                root.render(
+                    <div style={{ transform: 'translate(-50%, -100%)' }}>
+                        <AssetOperationsCard {...assetInfo} />
+                        <button 
+                            onClick={() => {
+                                if (assetCardDiv) {
+                                    assetCardDiv.style.display = 'none';
+                                }
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '18px',
+                                height: '18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#4f46e5',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                zIndex: 1001
+                            }}
+                        >
+                            ×
+                        </button>
+                    </div>
+                );
+
+                // Show the asset card
+                assetCardDiv.style.display = 'block';
+
+                // Update position in render loop
                 scene.registerBeforeRender(() => {
-                    if (showAssetCard) {
-                        updateCardPosition(mesh);
+                    if (mesh && assetCardDiv && currentCamera && engine) {
+                        const meshPosition = mesh.getBoundingInfo().boundingBox.centerWorld;
+                        const screenPosition = BABYLON.Vector3.Project(
+                            meshPosition,
+                            BABYLON.Matrix.Identity(),
+                            scene.getTransformMatrix(),
+                            currentCamera.viewport.toGlobal(
+                                engine.getRenderWidth(),
+                                engine.getRenderHeight()
+                            )
+                        );
+
+                        assetCardDiv.style.left = `${screenPosition.x}px`;
+                        assetCardDiv.style.top = `${screenPosition.y - 40}px`; // Position above the mesh capsule
                     }
                 });
             } else {
@@ -502,6 +562,21 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
             console.error('Error in handleMeshClick:', error);
         }
     };
+
+    // Clean up function for component unmount
+    React.useEffect(() => {
+        return () => {
+            // Clean up all overlay divs when component unmounts
+            loadedMeshes.forEach(mesh => {
+                if (mesh.metadata?.overlayDiv) {
+                    mesh.metadata.overlayDiv.remove();
+                }
+                if (mesh.metadata?.assetCardDiv) {
+                    mesh.metadata.assetCardDiv.remove();
+                }
+            });
+        };
+    }, [loadedMeshes]);
 
     // Add this function to handle double click
     const handleDoubleClick = async (mesh: BABYLON.AbstractMesh) => {
@@ -923,57 +998,34 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                     />
                 </div>
             )}
-            {showAssetCard && (
-                <div 
-                    className="asset-card-container" 
-                    style={{
-                        position: 'absolute',
-                        left: `${cardPosition.x}px`,
-                        top: `${cardPosition.y}px`,
-                        transform: 'translate(-50%, -100%)',
-                        zIndex: 1000,
-                        pointerEvents: 'all'
-                    }}
-                >
-                    <AssetOperationsCard
-                        assetCount={selectedAssetInfo.assetCount}
-                        openTickets={selectedAssetInfo.openTickets}
-                        criticalActions={selectedAssetInfo.criticalActions}
-                        imageUrl={selectedAssetInfo.imageUrl}
-                        description={selectedAssetInfo.description}
-                    />
-                    <button 
-                        onClick={() => setShowAssetCard(false)}
-                        onMouseEnter={() => setIsCloseButtonHovered(true)}
-                        onMouseLeave={() => setIsCloseButtonHovered(false)}
-                        style={{
-                            position: 'absolute',
-                            top: '4px',
-                            right: '4px',
-                            background: isCloseButtonHovered ? '#4f46e5' : 'rgba(255, 255, 255, 0.9)',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '18px',
-                            height: '18px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: isCloseButtonHovered ? 'white' : '#4f46e5',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            zIndex: 1001,
-                            transition: 'all 0.2s ease',
-                            transform: isCloseButtonHovered ? 'scale(1.1)' : 'scale(1)'
-                        }}
-                    >
-                        ×
-                    </button>
-                </div>
-            )}
             {isCCTVVisible && <CCTVWidget />}
             <div className="canvas-container">
                 <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+                {selectedBuildingId && (
+                    <div style={{
+                        position: 'absolute',
+                        left: '20px',
+                        top: '70px',
+                        zIndex: 1000,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px',
+                        width: '300px',
+                        transition: 'opacity 0.3s ease-in-out',
+                        opacity: selectedBuildingId ? '1' : '0'
+                    }}>
+                        <AssetHealthStatus 
+                            date={new Date().toISOString()}
+                            floor={selectedBuildingId}
+                            filter="This Week"
+                        />
+                        <MaintenanceCompliance 
+                            date={new Date().toISOString()}
+                            floor={selectedBuildingId}
+                            filter="This Week"
+                        />
+                    </div>
+                )}
             </div>
             
             <button 

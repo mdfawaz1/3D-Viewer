@@ -1421,3 +1421,868 @@
         }
     }
 }
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap");
+$impactful-font: "Montserrat", sans-serif !important;
+//Modal Styles
+.modal-panel {
+	.modal-header {
+		.filter-panel-btn {
+			right: -375px;
+		}
+	}
+	.modal-body {
+		//Building Health Score Popup Styles
+		.row-container {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+
+			.first-row {
+				width: 90%;
+				display: flex;
+				height: 200px;
+				margin-bottom: 20px;
+				justify-content: space-evenly;
+			}
+			.second-row {
+				width: 90%;
+
+				display: flex;
+				height: 200px;
+				justify-content: space-evenly;
+				margin-bottom: 20px;
+			}
+			.third-row {
+				width: 90%;
+
+				display: flex;
+				height: 200px;
+				justify-content: space-evenly;
+			}
+		}
+		.occupancypopup-row {
+			display: flex;
+			justify-content: space-around;
+		}
+
+		//Tenant Popup Styles
+		.tenant-container {
+			.tenant-row-one {
+				display: flex;
+				justify-content: space-evenly;
+				margin-bottom: 20px;
+			}
+			.tenant-row-two {
+				display: flex;
+				justify-content: space-evenly;
+			}
+		}
+	}
+}
+//Grey Card Styles
+
+//Occupancy Widget
+.occupancy-widget {
+	background-color: #6a68686e;
+	color: #fff;
+	padding: 10px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	.header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+
+	.location-info {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.insight-block {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		.capacity-container {
+			margin-left: 5px;
+			p:first-child {
+				font-family: $impactful-font;
+				font-size: 20px;
+				font-weight: 200;
+			}
+			p:last-child {
+				font-family: $impactful-font;
+				margin-top: -20px;
+				font-size: 22px;
+				font-weight: 800;
+			}
+		}
+	}
+
+	.chart-container {
+		// display: flex;
+		// justify-content: center;
+		// align-items: center;
+		width: 100px;
+		height: 100px;
+	}
+
+	.widget-insight {
+		width: 100%;
+		text-align: center;
+		.insight-numbers {
+			font-family: $impactful-font;
+			font-weight: 600;
+		}
+	}
+}
+
+//Occupancy Widget Dropdown
+.weekly-occupancy {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	width: 100%;
+	padding: 10px;
+}
+
+.day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1 1 calc(16.66% - 10px); /* 6 items max in a row */
+	margin: 5px;
+}
+
+.rate {
+	display: flex;
+	align-items: center;
+}
+
+.rate.high {
+	color: green;
+}
+
+.rate.low {
+	color: red;
+}
+
+.icon-indicator {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-left: 5px;
+	animation: blink 1s infinite;
+}
+
+.icon-indicator.green {
+	background-color: green;
+}
+
+.icon-indicator.red {
+	background-color: red;
+}
+
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+//Energy Efficiency
+.energy-efficiency-widget {
+	padding: 10px;
+	// background-color: #f9f9f9;
+	background-color: #6a68686e;
+	color: #fff;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	font-family: Arial, sans-serif;
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		.location-info {
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			padding: 10px 10px 5px 10px;
+		}
+		.info-section {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			width: 100%;
+			height: 75px;
+			// padding: 10px;
+			.floor-space-info {
+				width: 40%;
+				text-align: left;
+				p:first-child {
+					font-family: $impactful-font;
+					font-size: 11px;
+					font-weight: 500;
+				}
+				p:nth-child(2) {
+					font-family: $impactful-font;
+					font-size: 16px;
+					font-weight: 800;
+				}
+			}
+			.overall-consumption-info {
+				width: 45%;
+				text-align: right;
+				p:first-child {
+					font-family: $impactful-font;
+					font-size: 11px;
+					font-weight: 500;
+				}
+				p:nth-child(2) {
+					font-family: $impactful-font;
+					font-size: 16px;
+					font-weight: 800;
+				}
+			}
+		}
+		.chart-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 200px;
+			height: 100px;
+		}
+	}
+}
+
+//Mainteinence Compliance Widget
+.maintenance-compliance-widget {
+	background-color: #6a68686e;
+	color: #fff;
+	padding: 10px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	.header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+
+	.location-info {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.insight-block {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		.insight-section {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			// height: 101px;
+			.task-container {
+				width: 100%;
+				height: 55px;
+				border-left: black solid 2px;
+				padding-left: 10px;
+				.task-title {
+					margin-top: unset;
+					font-family: $impactful-font;
+					font-size: 13px;
+					font-weight: 500;
+				}
+				.task-number {
+					display: flex;
+					align-items: center;
+					// justify-content: space-around;
+					height: 15px;
+					p {
+						font-family: $impactful-font;
+						font-size: 16px;
+						font-weight: 800;
+						margin-left: 10px;
+					}
+				}
+			}
+			.divider {
+				width: 100%;
+				height: 1px;
+				background-color: #00000045;
+				margin: 5px 0;
+			}
+		}
+		.capacity-container {
+			margin-left: 5px;
+			p:first-child {
+				font-family: $impactful-font;
+				font-size: 20px;
+				font-weight: 200;
+			}
+			p:last-child {
+				font-family: $impactful-font;
+				margin-top: -20px;
+				font-size: 22px;
+				font-weight: 800;
+			}
+		}
+	}
+
+	.chart-container {
+		// display: flex;
+		// justify-content: center;
+		// align-items: center;
+		width: 100px;
+		height: 100px;
+	}
+
+	.widget-insight {
+		width: 100%;
+		text-align: center;
+		.insight-numbers {
+			font-family: $impactful-font;
+			font-weight: 600;
+		}
+	}
+}
+
+//Security Incidents Widget
+.security-incidents-widget {
+	background-color: #000;
+	color: #ffd700;
+	padding: 10px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+		color: #ffd700;
+
+		svg {
+			color: #ffd700;
+		}
+	}
+
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+
+	.location-info {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+		color: #ffd700;
+	}
+
+	.insight-block {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+
+		.insight-section {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+
+			.task-container {
+				width: 100%;
+				height: 55px;
+				border-left: #ffd700 solid 2px;
+				padding-left: 10px;
+
+				.task-title {
+					margin-top: unset;
+					font-family: $impactful-font;
+					font-size: 13px;
+					font-weight: 500;
+				}
+
+				.task-number {
+					display: flex;
+					align-items: center;
+					height: 15px;
+
+					p {
+						font-family: $impactful-font;
+						font-size: 16px;
+						font-weight: 800;
+						margin-left: 10px;
+					}
+				}
+			}
+
+			.divider {
+				width: 100%;
+				height: 1px;
+				background-color: #ffd70045;
+				margin: 5px 0;
+			}
+		}
+	}
+
+	.chart-container {
+		width: 100px;
+		height: 100px;
+	}
+
+	.widget-insight {
+		width: 100%;
+		text-align: center;
+
+		.insight-numbers {
+			font-family: $impactful-font;
+			font-weight: 600;
+		}
+	}
+}
+
+// Security Incidents Dropdown
+.weekly-incidents {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	width: 100%;
+	padding: 10px;
+	color: #ffd700;
+}
+
+.day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1 1 calc(16.66% - 10px); /* 6 items max in a row */
+	margin: 5px;
+}
+
+.rate {
+	display: flex;
+	align-items: center;
+}
+
+.rate.high {
+	color: green;
+}
+
+.rate.low {
+	color: red;
+}
+
+.icon-indicator {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-left: 5px;
+	animation: blink 1s infinite;
+}
+
+.icon-indicator.green {
+	background-color: green;
+}
+
+.icon-indicator.red {
+	background-color: red;
+}
+
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+.asset-health-status-widget {
+	background-color: #6a68686e;
+	color: #fff;
+	padding: 10px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	.header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+
+	.location-info {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+	}
+
+	.insight-block {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: space-between;
+		.insight-section {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: space-around;
+			margin-top: 10px;
+			margin-bottom: 10px;
+			// height: 101px;
+			.task-container {
+				width: 100%;
+				height: 55px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+
+				.task-title {
+					margin-top: unset;
+					font-family: $impactful-font;
+					font-size: 11px;
+					font-weight: 700;
+					text-align: center;
+					position: relative;
+					top: 5px;
+				}
+
+				.task-number {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+					height: 55px;
+					width: 55px;
+					background-color: #e0e7ff; // Light blue background
+					border-radius: 50%; // Circular shape
+					position: relative;
+					top: 2px;
+					.icon-container {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						width: 30px;
+						height: 30px;
+						background-color: #0fca7a; // Black background for the icon
+						color: #fff;
+						border-radius: 50%; // Circular shape
+						position: absolute;
+						top: -10px; // Position the icon at the top center
+					}
+
+					p {
+						font-family: $impactful-font;
+						font-size: 16px;
+						font-weight: 800;
+						margin-top: 20px; // Adjust the margin to position the text below the icon
+						color: #000; // Black text color
+					}
+				}
+			}
+			.divider {
+				width: 100%;
+				height: 1px;
+				background-color: #00000045;
+				margin: 5px 0;
+			}
+		}
+		.capacity-container {
+			margin-left: 5px;
+			p:first-child {
+				font-family: $impactful-font;
+				font-size: 20px;
+				font-weight: 200;
+			}
+			p:last-child {
+				font-family: $impactful-font;
+				margin-top: -20px;
+				font-size: 22px;
+				font-weight: 800;
+			}
+		}
+	}
+
+	.chart-container {
+		// display: flex;
+		// justify-content: center;
+		// align-items: center;
+		width: 100px;
+		height: 100px;
+	}
+
+	.widget-insight {
+		width: 100%;
+		text-align: center;
+		.insight-numbers {
+			font-family: $impactful-font;
+			font-weight: 600;
+		}
+	}
+}
+
+//Tenant Sentiments
+.tenant-sentiment-widget {
+	background-color: #6a68686e;
+	color: #fff;
+	padding: 10px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+		// color: #333;
+
+		// svg {
+		// 	color: #333;
+		// }
+	}
+
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+
+	.location-info {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		padding: 10px;
+		// color: #333;
+	}
+
+	.insight-block {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		// justify-content: space-between;
+		align-items: center;
+
+		.insight-section {
+			// flex-direction: column;
+
+			display: flex;
+			margin-top: 15px;
+			align-items: center;
+			.task-container {
+				width: 100%;
+				height: 55px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+
+				.task-title {
+					margin-top: 5px;
+					font-family: $impactful-font;
+					font-size: 0.6vw;
+					font-weight: 500;
+					text-align: center;
+				}
+
+				.task-number {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+					height: 55px;
+					width: 55px;
+					background-color: #0fca7a; // Green background
+					border-radius: 50%; // Circular shape
+					position: relative;
+
+					.icon-container {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						width: 30px;
+						height: 30px;
+						background-color: #000; // Black background for the icon
+						border-radius: 50%; // Circular shape
+						position: absolute;
+						top: -15px; // Position the icon at the top center
+					}
+
+					p {
+						font-family: $impactful-font;
+						font-size: 16px;
+						font-weight: 800;
+						margin-top: 20px; // Adjust the margin to position the text below the icon
+						color: #000; // Black text color
+					}
+				}
+			}
+
+			.divider {
+				width: 100%;
+				height: 1px;
+				background-color: #00000045;
+				margin: 5px 0;
+			}
+		}
+
+		.task-container {
+			margin-left: 5px;
+
+			p:first-child {
+				font-family: $impactful-font;
+				font-size: 20px;
+				font-weight: 200;
+			}
+
+			p:last-child {
+				font-family: $impactful-font;
+				margin-top: -20px;
+				font-size: 22px;
+				font-weight: 800;
+			}
+		}
+	}
+
+	.chart-container {
+		width: 100px;
+		height: 100px;
+		margin-top: -18px;
+		margin-bottom: 10px;
+	}
+
+	.dropdown-btn {
+		margin-top: 15px;
+	}
+	.widget-insight {
+		width: 100%;
+		text-align: center;
+
+		.insight-numbers {
+			font-family: $impactful-font;
+			font-weight: 600;
+		}
+
+		.positive {
+			color: green;
+		}
+
+		.negative {
+			color: red;
+		}
+	}
+}
+
+// Tenant Sentiments Dropdown
+.weekly-tasks {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	width: 100%;
+	padding: 10px;
+	color: #333;
+}
+
+.day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1 1 calc(16.66% - 10px); // 6 items max in a row
+	margin: 5px;
+}
+
+.rate {
+	display: flex;
+	align-items: center;
+}
+
+.rate.high {
+	color: green;
+}
+
+.rate.low {
+	color: red;
+}
+
+.icon-indicator {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-left: 5px;
+	animation: blink 1s infinite;
+}
+
+.icon-indicator.green {
+	background-color: green;
+}
+
+.icon-indicator.red {
+	background-color: red;
+}
+
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
