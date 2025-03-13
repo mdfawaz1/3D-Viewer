@@ -909,7 +909,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 newCamera.lowerBetaLimit = 0.1;
                 newCamera.upperBetaLimit = Math.PI / 2;
                 newCamera.lowerRadiusLimit = 5;
-                newCamera.upperRadiusLimit = 950;
+                newCamera.upperRadiusLimit = 7000;
 
                 if (savedView) {
                     newCamera.position = new BABYLON.Vector3(
