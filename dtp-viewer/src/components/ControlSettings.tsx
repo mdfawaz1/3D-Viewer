@@ -323,7 +323,7 @@ const ControlSettings: React.FC<ControlSettingsProps> = ({
                 currentValue = limit === 'min' ? zoomLimits.min : zoomLimits.max;
                 newValue = increment ? currentValue + step : currentValue - step;
                 // Increased zoom range
-                newValue = Math.max(1, Math.min(2000, newValue));
+                newValue = Math.max(1, Math.min(7000, newValue));
                 break;
             default:
                 return;
