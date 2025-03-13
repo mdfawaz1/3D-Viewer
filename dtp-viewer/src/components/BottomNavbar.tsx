@@ -106,6 +106,12 @@ const BottomNavbar: React.FC = () => {
     setActiveDropdown(null);
   };
 
+  const handleMainIconClick = (mainItem: string) => {
+    if (selectedItem?.main === mainItem) {
+      setSelectedItem(null);
+    }
+  };
+
   return (
     <div className="bottom-navbar">
       {navItems.map((item) => (
@@ -116,13 +122,14 @@ const BottomNavbar: React.FC = () => {
           onMouseLeave={handleMouseLeave}
         >
           <span className="nav-label">
-            <span className="nav-icon">
+            <span className="nav-icon" onClick={() => handleMainIconClick(item.label)} style={{ cursor: 'pointer' }}>
               <FontAwesomeIcon icon={item.icon} size="lg" />
             </span>
             {selectedItem?.main === item.label ? (
               <>
-                {selectedItem.sub}
                 <FontAwesomeIcon icon={faChevronRight} className="flow-arrow" />
+                <FontAwesomeIcon icon={item.items.find(subItem => subItem.label === selectedItem.sub)?.icon || item.icon} className="submenu-icon" />
+                {selectedItem.sub}
               </>
             ) : (
               item.label

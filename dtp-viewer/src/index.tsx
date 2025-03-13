@@ -25,6 +25,7 @@ import MeshConfigurationScreen from './components/MeshConfigurationScreen';
 import AssetOperationsCard from './components/AssetOperationsCard';
 import AssetHealthStatus from './components/AssetHealthStatus';
 import MaintenanceCompliance from './components/MaintenanceCompliance';
+import * as THREE from 'three';
 
 interface IWidgetProps {
     uxpContext?: IContextProvider,
@@ -581,60 +582,308 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
     // Add this function to handle double click
     const handleDoubleClick = async (mesh: BABYLON.AbstractMesh) => {
         try {
-            const newModelFile = await fileSystemService.loadFile('1741094349528_valentine-new.glb');
-            if (newModelFile && scene) {
-                // Create fade out animation for old meshes
-                const fadeOutAnimation = new BABYLON.Animation(
-                    "fadeOut",
-                    "visibility",
-                    60,
-                    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-                );
-                fadeOutAnimation.setKeys([
-                    { frame: 0, value: 1 },
-                    { frame: 30, value: 0 }
-                ]);
+            // Start loading the model file in the background
+            const modelFilePromise = fileSystemService.loadFile('1741094349528_valentine-new.glb');
+            
+            if (scene && currentCamera) {
+                // Reset all widget states first before DOM manipulation
+                const resetWidgetStates = () => {
+                    // Reset building-specific states
+                    setSelectedBuildingId(null);
+                    setSelectedNavItem(null);
+                    setCurrentModelId(null);
+                    
+                    // Hide all UI components
+                    setShowMeshGraph(false);
+                    setIsCCTVVisible(false);
+                    setShowAssetCard(false);
+                    setPanelVisible(false);
+                    setIsMeshConfigOpen(false);
+                    
+                    // Reset any other widget-specific states
+                    setMeshGraphData({
+                        title: '',
+                        value: 0,
+                        subtitle: ''
+                    });
+                    
+                    // Reset position states
+                    setCardPosition({ x: 0, y: 0 });
+                    
+                    // Reset selection states
+                    setSelectedProperties(null);
+                    setSelectedMesh(null);
+                    
+                    // Reset asset info
+                    setSelectedAssetInfo({
+                        assetCount: 0,
+                        openTickets: 0,
+                        criticalActions: 0,
+                        description: '',
+                        imageUrl: ''
+                    });
+                };
 
-                // Fade out old meshes and their capsules
-                const fadePromises = loadedMeshes.map(oldMesh => {
-                    return new Promise<void>(resolve => {
-                        // Fade out capsule
-                        if (oldMesh.metadata?.overlayDiv) {
-                            oldMesh.metadata.overlayDiv.style.transition = 'opacity 0.5s';
-                            oldMesh.metadata.overlayDiv.style.opacity = '0';
-                        }
+                // Wait a frame for React to process state updates
+                await new Promise(resolve => requestAnimationFrame(resolve));
 
-                        // Fade out mesh
-                        scene!.beginDirectAnimation(
-                            oldMesh,
-                            [fadeOutAnimation],
-                            0,
-                            30,
-                            false,
-                            1,
-                            () => {
-                                if (oldMesh.metadata?.overlayDiv) {
-                                    oldMesh.metadata.overlayDiv.remove();
-                                }
-                                oldMesh.dispose();
-                                resolve();
+                // Then clean up the scene
+                const cleanupExistingScene = () => {
+                    // Clean up all mesh overlays and cards
+                    loadedMeshes.forEach(mesh => {
+                        // Remove mesh capsule overlay
+                        if (mesh.metadata?.overlayDiv) {
+                            const root = mesh.metadata.overlayDiv._reactRootContainer;
+                            if (root) {
+                                root.unmount();
                             }
+                            mesh.metadata.overlayDiv.remove();
+                            mesh.metadata.overlayDiv = null;
+                        }
+                        // Remove asset operation card
+                        if (mesh.metadata?.assetCardDiv) {
+                            const root = mesh.metadata.assetCardDiv._reactRootContainer;
+                            if (root) {
+                                root.unmount();
+                            }
+                            mesh.metadata.assetCardDiv.remove();
+                            mesh.metadata.assetCardDiv = null;
+                        }
+                        // Clean up any glow layers associated with the mesh
+                        const glowLayer = scene.getGlowLayerByName(`glow-${mesh.name}`);
+                        if (glowLayer) {
+                            glowLayer.dispose();
+                        }
+                        // Dispose the mesh itself
+                        mesh.dispose();
+                    });
+
+                    // Clean up any remaining overlay divs in the canvas container
+                    const canvasContainer = canvasRef.current?.parentElement;
+                    if (canvasContainer) {
+                        // Get all overlay divs
+                        const overlays = Array.from(canvasContainer.getElementsByTagName('div'));
+                        
+                        // Unmount any React roots before removing elements
+                        overlays.forEach(overlay => {
+                            const root = (overlay as any)._reactRootContainer;
+                            if (root) {
+                                root.unmount();
+                            }
+                            if (overlay.parentNode === canvasContainer) {
+                                overlay.remove();
+                            }
+                        });
+                    }
+
+                    // Clear the loadedMeshes array
+                    setLoadedMeshes([]);
+                };
+
+                // Perform cleanup in sequence
+                resetWidgetStates();
+                await new Promise(resolve => setTimeout(resolve, 0)); // Let React process state updates
+                cleanupExistingScene();
+
+                // Create and setup Three.js elements immediately
+                const threeCanvas = document.createElement('canvas');
+                threeCanvas.style.position = 'absolute';
+                threeCanvas.style.top = '0';
+                threeCanvas.style.left = '0';
+                threeCanvas.style.width = '100%';
+                threeCanvas.style.height = '100%';
+                threeCanvas.style.zIndex = '1000';
+                canvasRef.current?.parentElement?.appendChild(threeCanvas);
+
+                // Set Babylon.js canvas to invisible during effect
+                if (canvasRef.current) {
+                    canvasRef.current.style.opacity = '0';
+                }
+
+                // Initialize Three.js scene with optimized setup
+                const threeScene = new THREE.Scene();
+                threeScene.fog = new THREE.Fog(0x000000, 0.015, 72);
+                const threeCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                threeCamera.position.z = 55;
+
+                const renderer = new THREE.WebGLRenderer({
+                    canvas: threeCanvas,
+                    alpha: true
+                });
+                renderer.setClearColor("#000", 1);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                // Create and show text overlay immediately
+                const textDiv = document.createElement('div');
+                textDiv.style.position = 'absolute';
+                textDiv.style.top = '50%';
+                textDiv.style.left = '50%';
+                textDiv.style.transform = 'translate(-50%, -50%)';
+                textDiv.style.color = 'white';
+                textDiv.style.fontFamily = 'brandon-grotesque, sans-serif';
+                textDiv.style.fontSize = '32px';
+                textDiv.style.textAlign = 'center';
+                textDiv.style.textTransform = 'uppercase';
+                textDiv.style.letterSpacing = '4px';
+                textDiv.style.pointerEvents = 'none';
+                textDiv.style.zIndex = '1001';
+                textDiv.innerHTML = 'Entering New World';
+                canvasRef.current?.parentElement?.appendChild(textDiv);
+
+                // Fade out text after delay
+                setTimeout(() => {
+                    textDiv.style.transition = 'opacity 1.5s';
+                    textDiv.style.opacity = '0';
+                }, 3000);
+
+                // Optimize star creation
+                const stars: { mesh: THREE.Mesh, trail: THREE.Line, velocity: number }[] = [];
+                const colors = [ "#0952BD", "#A5BFF0", "#118CD6", "#1AAEE8","#ffffff"];
+                const starGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+
+                // Create stars with staggered depths
+                for (let i = 0; i < 3000; i++) {
+                    const material = new THREE.MeshBasicMaterial({
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        transparent: true,
+                        opacity: 0.6,
+                        blending: THREE.AdditiveBlending
+                    });
+
+                    const star = new THREE.Mesh(starGeometry, material);
+                    // Distribute stars throughout the entire path initially
+                    star.position.x = Math.random() * 100 - 50;
+                    star.position.y = Math.random() * 100 - 50;
+                    star.position.z = Math.random() * 85 - 60; // Wider initial z-distribution
+                    star.scale.multiplyScalar(Math.random() * 0.5 + 0.5);
+
+                    const trailGeometry = new THREE.BufferGeometry();
+                    const trailMaterial = new THREE.LineBasicMaterial({
+                        color: material.color,
+                        transparent: true,
+                        opacity: 0.3,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    
+                    const trailPointsCount = 20;
+                    const points = new Array(trailPointsCount).fill(null).map((_, i) => {
+                        const t = i / (trailPointsCount - 1);
+                        return new THREE.Vector3(
+                            star.position.x,
+                            star.position.y,
+                            star.position.z - (t * 0.25)
                         );
                     });
-                });
+                    trailGeometry.setFromPoints(points);
+                    const trail = new THREE.Line(trailGeometry, trailMaterial);
+                    
+                    threeScene.add(star);
+                    threeScene.add(trail);
+                    stars.push({ 
+                        mesh: star, 
+                        trail: trail, 
+                        velocity: 0.09 + Math.random() * 0.02 // Slightly randomized initial velocity
+                    });
+                }
 
-                // Wait for all fades to complete
-                await Promise.all(fadePromises);
+                // Create plane for fade effect
+                const planeMesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(1000, 500),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x000000,
+                        transparent: true,
+                        opacity: 1
+                    })
+                );
+                threeScene.add(planeMesh);
 
-                // Load new model
-                const result = await BABYLON.SceneLoader.ImportMeshAsync("", "", newModelFile, scene);
+                // Start animation immediately
+                let warpStartTime = Date.now();
+                const accelerationDuration = 3000;
+                let animationFrame: number;
+
+                const animate = () => {
+                    animationFrame = requestAnimationFrame(animate);
+                    const elapsed = Date.now() - warpStartTime;
+                    const accelerationProgress = Math.min(elapsed / accelerationDuration, 1);
+                    
+                    stars.forEach(star => {
+                        // Calculate base velocity with slight variation
+                        const baseVelocity = 0.09 + (2.91 * accelerationProgress);
+                        star.velocity = baseVelocity + (Math.random() * 0.1 * baseVelocity); // Add small random variation
+                        star.mesh.position.z += star.velocity;
+
+                        // Update trail points
+                        const positions = star.trail.geometry.attributes.position.array as Float32Array;
+                        const trailLength = star.velocity * 10;
+                        
+                        positions[0] = star.mesh.position.x;
+                        positions[1] = star.mesh.position.y;
+                        positions[2] = star.mesh.position.z;
+
+                        const directionVector = new THREE.Vector3(0, 0, -1);
+                        for (let i = 1; i < 20; i++) {
+                            const t = i / 19;
+                            const segmentLength = trailLength * t;
+                            positions[i * 3] = star.mesh.position.x;
+                            positions[i * 3 + 1] = star.mesh.position.y;
+                            positions[i * 3 + 2] = star.mesh.position.z + (directionVector.z * segmentLength);
+                        }
+                        
+                        star.trail.geometry.attributes.position.needsUpdate = true;
+
+                        // Update trail opacity
+                        (star.trail.material as THREE.LineBasicMaterial).opacity = 
+                            0.3 * (star.velocity - 0.09) / (3.0 - 0.09);
+                        
+                        // Scale star size
+                        const scale = 1 + (star.velocity - 0.09) * 0.1;
+                        star.mesh.scale.set(scale, scale, scale);
+
+                        // Reset with staggered positions when star goes too far
+                        if (star.mesh.position.z >= 60) {
+                            star.mesh.position.set(
+                                Math.random() * 100 - 50,
+                                Math.random() * 100 - 50,
+                                -60 + Math.random() * 10 // Staggered reset positions
+                            );
+                            star.mesh.scale.setScalar(Math.random() * 0.5 + 0.5);
+                        }
+                    });
+
+                    (planeMesh.material as THREE.MeshBasicMaterial).opacity = 
+                        Math.max(0.01, 1 - accelerationProgress);
+
+                    renderer.render(threeScene, threeCamera);
+                };
+                animate();
+
+                // Wait for both the animation and model loading to complete
+                const [newModelFile] = await Promise.all([
+                    modelFilePromise,
+                    new Promise(resolve => setTimeout(resolve, 6000))
+                ]);
+
+                // Pre-load the new model while warp effect is still visible
+                const modelLoadPromise = BABYLON.SceneLoader.ImportMeshAsync("", "", newModelFile, scene);
+
+                // Keep warp effect running until model is ready
+                await modelLoadPromise;
+                
+                // Now that model is loaded, clean up warp effect
+                cancelAnimationFrame(animationFrame);
+                
+                // Get the loaded meshes
+                const result = await modelLoadPromise;
                 const newMeshes = result.meshes.filter(m => m.name !== "__root__");
 
-                // Set initial visibility to 0
-                newMeshes.forEach(mesh => mesh.visibility = 0);
+                // Hide all meshes initially
+                newMeshes.forEach(mesh => {
+                    mesh.visibility = 0;
+                });
 
-                // Check for saved view first
+                // Setup camera before transition
                 const meshKey = newMeshes.length > 0 ? newMeshes[0].name : null;
                 const allSavedViews = JSON.parse(localStorage.getItem('modelViews') || '{}');
                 const savedView = meshKey ? allSavedViews[meshKey] : null;
@@ -642,7 +891,7 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 // Calculate bounds for fallback position
                 const { center, size } = calculateModelBounds(newMeshes);
                 
-                // Create new ArcRotateCamera at the saved or default position
+                // Create and setup new camera
                 const newCamera = new BABYLON.ArcRotateCamera(
                     "arcCam",
                     Math.PI,
@@ -663,14 +912,12 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 newCamera.upperRadiusLimit = 950;
 
                 if (savedView) {
-                    // Set the saved position directly
                     newCamera.position = new BABYLON.Vector3(
                         savedView.position.x,
                         savedView.position.y,
                         savedView.position.z
                     );
                 } else {
-                    // Set default position
                     newCamera.position = new BABYLON.Vector3(
                         center.x,
                         center.y + size.y * 0.7,
@@ -683,33 +930,45 @@ const ThreeDViewerWidget: React.FunctionComponent<IWidgetProps> = (props: IWidge
                 scene.activeCamera = newCamera;
                 setCurrentCamera(newCamera);
 
-                // Create fade in animation for new meshes
-                const fadeInAnimation = new BABYLON.Animation(
-                    "fadeIn",
-                    "visibility",
-                    60,
-                    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-                );
-                fadeInAnimation.setKeys([
-                    { frame: 0, value: 0 },
-                    { frame: 30, value: 1 }
-                ]);
+                // Create smooth transition effect
+                const fadeInDuration = 1000; // 1 second fade
+                const fadeStartTime = Date.now();
+                
+                const fadeInAnimation = () => {
+                    const elapsed = Date.now() - fadeStartTime;
+                    const progress = Math.min(elapsed / fadeInDuration, 1);
+                    
+                    // Fade out warp effect
+                    if (threeCanvas) {
+                        threeCanvas.style.opacity = (1 - progress).toString();
+                    }
+                    
+                    // Fade in Babylon scene and new model
+                    if (canvasRef.current) {
+                        canvasRef.current.style.opacity = progress.toString();
+                    }
+                    
+                    // Fade in all meshes
+                    newMeshes.forEach(mesh => {
+                        mesh.visibility = progress;
+                    });
 
-                // Fade in new meshes and create their capsules
+                    if (progress < 1) {
+                        requestAnimationFrame(fadeInAnimation);
+                    } else {
+                        // Clean up Three.js elements after fade
+                        threeCanvas.remove();
+                        textDiv.remove();
+                    }
+                };
+
+                // Start the fade transition
+                fadeInAnimation();
+
+                // Continue with the rest of your existing code...
                 const canvasContainer = canvasRef.current?.parentElement;
                 if (canvasContainer) {
                     newMeshes.forEach((mesh, index) => {
-                        // Start fade in animation
-                        scene!.beginDirectAnimation(
-                            mesh,
-                            [fadeInAnimation],
-                            0,
-                            30,
-                            false,
-                            1
-                        );
-
                         // Create capsule with fade in
                         const meshConfig = meshConfigurations.find(config => config.meshName === mesh.name);
                         if (meshConfig) {

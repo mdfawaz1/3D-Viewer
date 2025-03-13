@@ -7,7 +7,7 @@ const LoadingOverlay: React.FC = () => {
     React.useEffect(() => {
         const interval = setInterval(() => {
             setProgress(prev => {
-                const newProgress = prev >= 100 ? 0 : prev + 1;
+                const newProgress = prev >= 100 ? 0 : prev + 4;
                 setCoordinates({
                     x: Math.floor(Math.sin(newProgress * 0.1) * 1000),
                     y: Math.floor(Math.cos(newProgress * 0.1) * 1000),
@@ -78,7 +78,10 @@ const LoadingOverlay: React.FC = () => {
                     </div>
                     <div className="progress-container">
                         <div className="progress-track">
-                            <div className="progress-fill" style={{ width: `${progress}%` }}>
+                            <div className="progress-fill" style={{ 
+                                width: `${Math.min(progress, 100)}%`,
+                                transition: 'width 30ms linear'
+                            }}>
                                 <div className="progress-glow"></div>
                             </div>
                             <div className="progress-markers">
@@ -92,7 +95,7 @@ const LoadingOverlay: React.FC = () => {
                         </div>
                         <div className="progress-text">
                             <span className="label">LOADING PROGRESS:</span>
-                            <span className="value">{progress.toString().padStart(2, '0')}%</span>
+                            <span className="value">{Math.min(Math.floor(progress), 100).toString().padStart(2, '0')}%</span>
                         </div>
                     </div>
                 </div>
